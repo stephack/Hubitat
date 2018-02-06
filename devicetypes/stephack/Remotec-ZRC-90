@@ -65,7 +65,7 @@ def parse(String description) {
 	return results
 }
 
-def zwaveEvent(physicalgraph.zwave.commands.centralscenev1.CentralSceneNotification cmd) {
+def zwaveEvent(hubitat.zwave.commands.centralscenev1.CentralSceneNotification cmd) {
         logging(cmd)
         logging("keyAttributes: $cmd.keyAttributes")
         logging("sceneNumber: $cmd.sceneNumber")
@@ -96,7 +96,7 @@ private def logging(message) {
 }
 
 
-def zwaveEvent(physicalgraph.zwave.commands.wakeupv1.WakeUpNotification cmd) {
+def zwaveEvent(hubitat.zwave.commands.wakeupv1.WakeUpNotification cmd) {
 	def results = [createEvent(descriptionText: "$device.displayName woke up", isStateChange: false)]
 	results << response(zwave.wakeUpV1.wakeUpNoMoreInformation().format())
 	return results
@@ -106,7 +106,7 @@ def buttonEvent(value, type) {
 	createEvent(name: type, value: value, descriptionText: "$device.displayName button $value was $type", isStateChange: true)
 }
 
-def zwaveEvent(physicalgraph.zwave.commands.batteryv1.BatteryReport cmd) {
+def zwaveEvent(hubitat.zwave.commands.batteryv1.BatteryReport cmd) {
 	def map = [ name: "battery", unit: "%" ]
 	if (cmd.batteryLevel == 0xFF) {
 		map.value = 1
@@ -118,7 +118,7 @@ def zwaveEvent(physicalgraph.zwave.commands.batteryv1.BatteryReport cmd) {
 	createEvent(map)
 }
 
-def zwaveEvent(physicalgraph.zwave.Command cmd) {
+def zwaveEvent(hubitat.zwave.Command cmd) {
 	logging("Unhandled zwaveEvent: ${cmd}")
 }
 
