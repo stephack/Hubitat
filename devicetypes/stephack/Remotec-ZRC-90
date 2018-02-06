@@ -15,8 +15,9 @@
 metadata {
 	definition (name: "Remotec ZRC-90 Scene Master", namespace: "erocm123", author: "Eric Maycock") {
 		capability "Actuator"
-		capability "Button"
+		capability "PushableButton"
         capability "Holdable Button"
+	capability "DoubleTapableButton"
 		capability "Configuration"
 		capability "Sensor"
         capability "Battery"
@@ -134,7 +135,7 @@ def zwaveEvent(physicalgraph.zwave.commands.centralscenev1.CentralSceneNotificat
               if (!settings.holdMode || settings.holdMode == "1") buttonEvent(cmd.sceneNumber, "held")
            break
            case 3:
-              buttonEvent(cmd.sceneNumber + 8, "pushed")
+              buttonEvent(cmd.sceneNumber, "doubleTapped")
            break
            default:
                logging("Unhandled CentralSceneNotification: ${cmd}")
@@ -153,8 +154,8 @@ def zwaveEvent(physicalgraph.zwave.commands.wakeupv1.WakeUpNotification cmd) {
 	return results
 }
 
-def buttonEvent(button, value) {
-	createEvent(name: "button", value: value, data: [buttonNumber: button], descriptionText: "$device.displayName button $button was $value", isStateChange: true)
+def buttonEvent(value, type) {
+	createEvent(name: type, value: value, descriptionText: "$device.displayName button $value was $type", isStateChange: true)
 }
 
 def zwaveEvent(physicalgraph.zwave.commands.batteryv1.BatteryReport cmd) {
