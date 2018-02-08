@@ -6,16 +6,19 @@
  * 
  *
  *  2/06/18 - converted code to hubitat format
- * 		removed ability to hid "held options"
+ * 		removed ability to hide "held options"
  *		removed hwspecifics section as is no longer applicable
  *		adjusted device list to look for "capability.pushableButton"
  *		adjusted buttonDevice subscription (pushed, held, doubleTapped)
  *		adjusted buttonEvent() to swap "name" and "value" as per new rules
  * 2/08/18 - change formatting for Button Config Preview (Blue/Complete color)
+ *		Added Double Tap inputs and edited shallHide() getDescription()
+ *		added code for showDouble() to only display when controller support DT
+ *		removed enableSpec and other Virtual Container Code as this is not supported in Hubitat
  *
- *
+ * TodDo - add if(showDouble) to inputs and test
  */
-def version(){"v0.2.180206"}
+def version(){"v0.2.180208"}
 
 definition(
     name: "Advanced Button Controller",
@@ -93,136 +96,160 @@ def getButtonSections(buttonNumber) {
 	//		if(hwSpecifics== false) paragraph image: "https://cdn.rawgit.com/stephack/ABC/master/resources/images/${picNameNoSpace}", "${getSpecText()}"
     	//}
         section("Switches (Turn On)", hideable: true, hidden: !shallHide("lightOn_${buttonNumber}")) {
-			input "lightOn_${buttonNumber}_pushed", "capability.switch", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
-			input "lightOn_${buttonNumber}_held", "capability.switch", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
-		}
-		section("Switches (Turn Off)", hideable: true, hidden: !shallHide("lightOff_${buttonNumber}")) {
-			input "lightOff_${buttonNumber}_pushed", "capability.switch", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
-			input "lightOff_${buttonNumber}_held", "capability.switch", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
-		}
+		input "lightOn_${buttonNumber}_pushed", "capability.switch", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
+		input "lightOn_${buttonNumber}_held", "capability.switch", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
+		input "lightOn_${buttonNumber}_doubleTapped", "capability.switch", title: "When Double Tapped", multiple: true, required: false, submitOnChange: collapseAll
+	}
+	section("Switches (Turn Off)", hideable: true, hidden: !shallHide("lightOff_${buttonNumber}")) {
+		input "lightOff_${buttonNumber}_pushed", "capability.switch", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
+		input "lightOff_${buttonNumber}_held", "capability.switch", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
+		input "lightOff_${buttonNumber}_doubleTapped", "capability.switch", title: "When Double Tapped", multiple: true, required: false, submitOnChange: collapseAll
+	}
         section("Switches (Toggle On/Off)", hideable: true, hidden: !shallHide("lights_${buttonNumber}")) {
-			input "lights_${buttonNumber}_pushed", "capability.switch", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
-			input "lights_${buttonNumber}_held", "capability.switch", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
-		}
-		section(" "){}
-		section("Dimmers (On to Level - Group 1)", hideable: true, hidden: !(shallHide("lightDim_${buttonNumber}") || shallHide("valLight${buttonNumber}"))) {
-			input "lightDim_${buttonNumber}_pushed", "capability.switchLevel", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
-			input "valLight${buttonNumber}_pushed", "number", title: "Bright Level", multiple: false, required: false, description: "0 to 100%"
-			input "lightDim_${buttonNumber}_held", "capability.switchLevel", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
-			input "valLight${buttonNumber}_held", "number", title: "Bright Level", multiple: false, required: false, description: "0 to 100%"
-		}
-		section("Dimmers (On to Level - Group 2)", hideable: true, hidden: !(shallHide("lightD2m_${buttonNumber}") || shallHide("valLight2${buttonNumber}"))) {
-			input "lightD2m_${buttonNumber}_pushed", "capability.switchLevel", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
-			input "valLight2${buttonNumber}_pushed", "number", title: "Bright Level", multiple: false, required: false, description: "0 to 100%"
-			input "lightD2m_${buttonNumber}_held", "capability.switchLevel", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
-			input "valLight2${buttonNumber}_held", "number", title: "Bright Level", multiple: false, required: false, description: "0 to 100%"
-		}
+		input "lights_${buttonNumber}_pushed", "capability.switch", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
+		input "lights_${buttonNumber}_held", "capability.switch", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
+		input "lights_${buttonNumber}_doubleTapped", "capability.switch", title: "When Double Tapped", multiple: true, required: false, submitOnChange: collapseAll
+	}
+	section(" "){}
+	section("Dimmers (On to Level - Group 1)", hideable: true, hidden: !(shallHide("lightDim_${buttonNumber}") || shallHide("valLight${buttonNumber}"))) {
+		input "lightDim_${buttonNumber}_pushed", "capability.switchLevel", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
+		input "valLight${buttonNumber}_pushed", "number", title: "Bright Level", multiple: false, required: false, description: "0 to 100%"
+		input "lightDim_${buttonNumber}_held", "capability.switchLevel", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
+		input "valLight${buttonNumber}_held", "number", title: "Bright Level", multiple: false, required: false, description: "0 to 100%"
+		input "lightDim_${buttonNumber}_doubleTapped", "capability.switchLevel", title: "When Double Tapped", multiple: true, required: false, submitOnChange: collapseAll
+		input "valLight${buttonNumber}_doubleTapped", "number", title: "Bright Level", multiple: false, required: false, description: "0 to 100%"
+	}
+	section("Dimmers (On to Level - Group 2)", hideable: true, hidden: !(shallHide("lightD2m_${buttonNumber}") || shallHide("valLight2${buttonNumber}"))) {
+		input "lightD2m_${buttonNumber}_pushed", "capability.switchLevel", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
+		input "valLight2${buttonNumber}_pushed", "number", title: "Bright Level", multiple: false, required: false, description: "0 to 100%"
+		input "lightD2m_${buttonNumber}_held", "capability.switchLevel", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
+		input "valLight2${buttonNumber}_held", "number", title: "Bright Level", multiple: false, required: false, description: "0 to 100%"
+		input "lightD2m_${buttonNumber}_doubleTapped", "capability.switchLevel", title: "When Double Tapped", multiple: true, required: false, submitOnChange: collapseAll
+		input "valLight2${buttonNumber}_doubleTapped", "number", title: "Bright Level", multiple: false, required: false, description: "0 to 100%"
+	}
         section("Dimmers (Increase Level By)", hideable: true, hidden: !(shallHide("dimPlus_${buttonNumber}") || shallHide("valDimP${buttonNumber}"))) {
-			input "dimPlus_${buttonNumber}_pushed", "capability.switchLevel", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
-            input "valDimP${buttonNumber}_pushed", "number", title: "When Pushed Increase by", multiple: false, required: false, description: "0 to 15"
-			input "dimPlus_${buttonNumber}_held", "capability.switchLevel", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
-            input "valDimP${buttonNumber}_held", "number", title: "When Held Increase by", multiple: false, required: false, description: "0 to 15"
-		}
-          	section("Dimmers (Decrease Level By)", hideable: true, hidden: !(shallHide("dimMinus_${buttonNumber}") || shallHide("valDimM${buttonNumber}"))) {
-			input "dimMinus_${buttonNumber}_pushed", "capability.switchLevel", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
-            input "valDimM${buttonNumber}_pushed", "number", title: "When Pushed Decrease by", multiple: false, required: false, description: "0 to 15"
-			input "dimMinus_${buttonNumber}_held", "capability.switchLevel", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
-            input "valDimM${buttonNumber}_held", "number", title: "When Held Decrease by", multiple: false, required: false, description: "0 to 15"
-		}
+		input "dimPlus_${buttonNumber}_pushed", "capability.switchLevel", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
+            	input "valDimP${buttonNumber}_pushed", "number", title: "When Pushed Increase by", multiple: false, required: false, description: "0 to 15"
+		input "dimPlus_${buttonNumber}_held", "capability.switchLevel", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
+            	input "valDimP${buttonNumber}_held", "number", title: "When Held Increase by", multiple: false, required: false, description: "0 to 15"
+		input "dimPlus_${buttonNumber}_doubleTapped", "capability.switchLevel", title: "When Double Tapped", multiple: true, required: false, submitOnChange: collapseAll
+            	input "valDimP${buttonNumber}_doubleTapped", "number", title: "When Double Tapped Increase by", multiple: false, required: false, description: "0 to 15"
+	}
+   	section("Dimmers (Decrease Level By)", hideable: true, hidden: !(shallHide("dimMinus_${buttonNumber}") || shallHide("valDimM${buttonNumber}"))) {
+		input "dimMinus_${buttonNumber}_pushed", "capability.switchLevel", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
+            	input "valDimM${buttonNumber}_pushed", "number", title: "When Pushed Decrease by", multiple: false, required: false, description: "0 to 15"
+		input "dimMinus_${buttonNumber}_held", "capability.switchLevel", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
+            	input "valDimM${buttonNumber}_held", "number", title: "When Held Decrease by", multiple: false, required: false, description: "0 to 15"
+		input "dimMinus_${buttonNumber}_doubleTapped", "capability.switchLevel", title: "When Double Tapped", multiple: true, required: false, submitOnChange: collapseAll
+            	input "valDimM${buttonNumber}_doubleTapped", "number", title: "When Double Tapped Decrease by", multiple: false, required: false, description: "0 to 15"
+	}
         section("Dimmers (Toggle OnToLevel/Off)", hideable: true, hidden: !(shallHide("lightsDT_${buttonNumber}") || shallHide("valDT${buttonNumber}"))) {
-			input "lightsDT_${buttonNumber}_pushed", "capability.switchLevel", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
-			input "valDT${buttonNumber}_pushed", "number", title: "Bright Level", required: false, description: "0 to 100%"
-			input "lightsDT_${buttonNumber}_held", "capability.switchLevel", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
-			input "valDT${buttonNumber}_held", "number", title: "Bright Level", required: false, description: "0 to 100%"
-		}
+		input "lightsDT_${buttonNumber}_pushed", "capability.switchLevel", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
+		input "valDT${buttonNumber}_pushed", "number", title: "Bright Level", required: false, description: "0 to 100%"
+		input "lightsDT_${buttonNumber}_held", "capability.switchLevel", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
+		input "valDT${buttonNumber}_held", "number", title: "Bright Level", required: false, description: "0 to 100%"
+		input "lightsDT_${buttonNumber}_doubleTapped", "capability.switchLevel", title: "When Double Tapped", multiple: true, required: false, submitOnChange: collapseAll
+		input "valDT${buttonNumber}_doubleTapped", "number", title: "Bright Level", required: false, description: "0 to 100%"
+	}
         section(" "){}
-		section("Speakers (Toggle Play/Pause)", hideable: true, hidden: !shallHide("speakerpp_${buttonNumber}")) {
-			input "speakerpp_${buttonNumber}_pushed", "capability.musicPlayer", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
-			input "speakerpp_${buttonNumber}_held", "capability.musicPlayer", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
-		}
+	section("Speakers (Toggle Play/Pause)", hideable: true, hidden: !shallHide("speakerpp_${buttonNumber}")) {
+		input "speakerpp_${buttonNumber}_pushed", "capability.musicPlayer", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
+		input "speakerpp_${buttonNumber}_held", "capability.musicPlayer", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
+		input "speakerpp_${buttonNumber}_doubleTapped", "capability.musicPlayer", title: "When Double Tapped", multiple: true, required: false, submitOnChange: collapseAll
+	}
         section("Speakers (Increase Vol By)", hideable: true, hidden: !(shallHide("speakervu_${buttonNumber}") || shallHide("valSpeakU${buttonNumber}"))) {
-			input "speakervu_${buttonNumber}_pushed", "capability.musicPlayer", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
-            input "valSpeakU${buttonNumber}_pushed", "number", title: "When Pushed Increase by", multiple: false, required: false, description: "0 to 15"
-			input "speakervu_${buttonNumber}_held", "capability.musicPlayer", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
-            input "valSpeakU${buttonNumber}_held", "number", title: "When Held Increase by", multiple: false, required: false, description: "0 to 15"
-		}
+		input "speakervu_${buttonNumber}_pushed", "capability.musicPlayer", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
+            	input "valSpeakU${buttonNumber}_pushed", "number", title: "When Pushed Increase by", multiple: false, required: false, description: "0 to 15"
+		input "speakervu_${buttonNumber}_held", "capability.musicPlayer", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
+            	input "valSpeakU${buttonNumber}_held", "number", title: "When Held Increase by", multiple: false, required: false, description: "0 to 15"
+		input "speakervu_${buttonNumber}_doubleTapped", "capability.musicPlayer", title: "When Double Tapped", multiple: true, required: false, submitOnChange: collapseAll
+            	input "valSpeakU${buttonNumber}_doubleTapped", "number", title: "When Double Tapped Increase by", multiple: false, required: false, description: "0 to 15"
+	}
         section("Speakers (Decrease Vol By)", hideable: true, hidden: !(shallHide("speakervd_${buttonNumber}") || shallHide("valSpeakD${buttonNumber}"))) {
-			input "speakervd_${buttonNumber}_pushed", "capability.musicPlayer", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
-            input "valSpeakD${buttonNumber}_pushed", "number", title: "When Pushed Decrease by", multiple: false, required: false, description: "0 to 15"
-			input "speakervd_${buttonNumber}_held", "capability.musicPlayer", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
-            input "valSpeakD${buttonNumber}_held", "number", title: "When Held Decrease by", multiple: false, required: false, description: "0 to 15"
-		}
+		input "speakervd_${buttonNumber}_pushed", "capability.musicPlayer", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
+     		input "valSpeakD${buttonNumber}_pushed", "number", title: "When Pushed Decrease by", multiple: false, required: false, description: "0 to 15"
+		input "speakervd_${buttonNumber}_held", "capability.musicPlayer", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
+            	input "valSpeakD${buttonNumber}_held", "number", title: "When Held Decrease by", multiple: false, required: false, description: "0 to 15"
+		input "speakervd_${buttonNumber}_doubleTapped", "capability.musicPlayer", title: "When Double Tapped", multiple: true, required: false, submitOnChange: collapseAll
+            	input "valSpeakD${buttonNumber}_doubleTapped", "number", title: "When Double Tapped Decrease by", multiple: false, required: false, description: "0 to 15"
+	}
         section("Speakers (Go to Next Track)", hideable: true, hidden: !shallHide("speakernt_${buttonNumber}")) {
-			input "speakernt_${buttonNumber}_pushed", "capability.musicPlayer", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
-			input "speakernt_${buttonNumber}_held", "capability.musicPlayer", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
-		}
+		input "speakernt_${buttonNumber}_pushed", "capability.musicPlayer", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
+		input "speakernt_${buttonNumber}_held", "capability.musicPlayer", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
+		input "speakernt_${buttonNumber}_doubleTapped", "capability.musicPlayer", title: "When Double Tapped", multiple: true, required: false, submitOnChange: collapseAll
+	}
         section("Speakers (Toggle Mute/Unmute)", hideable: true, hidden: !shallHide("speakermu_${buttonNumber}")) {
-			input "speakermu_${buttonNumber}_pushed", "capability.musicPlayer", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
-			input "speakermu_${buttonNumber}_held", "capability.musicPlayer", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
-		}
+		input "speakermu_${buttonNumber}_pushed", "capability.musicPlayer", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
+		input "speakermu_${buttonNumber}_held", "capability.musicPlayer", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
+		input "speakermu_${buttonNumber}_doubleTapped", "capability.musicPlayer", title: "When Double Tapped", multiple: true, required: false, submitOnChange: collapseAll
+	}
         section(" "){}
         section("Sirens (Toggle)", hideable: true, hidden: !shallHide("sirens_${buttonNumber}")) {
-			input "sirens_${buttonNumber}_pushed","capability.alarm" ,title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
-			input "sirens_${buttonNumber}_held", "capability.alarm", title: "When Held", multiple: true, required: false, submitOnChange: true
-		}
+		input "sirens_${buttonNumber}_pushed","capability.alarm" ,title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
+		input "sirens_${buttonNumber}_held", "capability.alarm", title: "When Held", multiple: true, required: false, submitOnChange: true
+		input "sirens_${buttonNumber}_doubleTapped", "capability.alarm", title: "When Double Tapped", multiple: true, required: false, submitOnChange: true
+	}
         section("Locks (Lock Only)", hideable: true, hidden: !shallHide("locks_${buttonNumber}")) {
-			input "locks_${buttonNumber}_pushed", "capability.lock", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
-			input "locks_${buttonNumber}_held", "capability.lock", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
-		}
-		section("Fans (Adjust - Low, Medium, High, Off)", hideable: true, hidden: !shallHide("fanAdjust_${buttonNumber}")) {
-			input "fanAdjust_${buttonNumber}_pushed", "capability.switchLevel", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
-			input "fanAdjust_${buttonNumber}_held", "capability.switchLevel", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
-		}
-		section("Shades (Adjust - Up, Down, or Stop)", hideable: true, hidden: !shallHide("shadeAdjust_${buttonNumber}")) {
-			input "shadeAdjust_${buttonNumber}_pushed", "capability.doorControl", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
-			input "shadeAdjust_${buttonNumber}_held", "capability.doorControl", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
-		}
+		input "locks_${buttonNumber}_pushed", "capability.lock", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
+		input "locks_${buttonNumber}_held", "capability.lock", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
+		input "locks_${buttonNumber}_doubleTapped", "capability.lock", title: "When Double Tapped", multiple: true, required: false, submitOnChange: collapseAll
+	}
+	section("Fans (Adjust - Low, Medium, High, Off)", hideable: true, hidden: !shallHide("fanAdjust_${buttonNumber}")) {
+		input "fanAdjust_${buttonNumber}_pushed", "capability.switchLevel", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
+		input "fanAdjust_${buttonNumber}_held", "capability.switchLevel", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
+		input "fanAdjust_${buttonNumber}_doubleTapped", "capability.switchLevel", title: "When Double Tapped", multiple: true, required: false, submitOnChange: collapseAll
+	}
+	section("Shades (Adjust - Up, Down, or Stop)", hideable: true, hidden: !shallHide("shadeAdjust_${buttonNumber}")) {
+		input "shadeAdjust_${buttonNumber}_pushed", "capability.doorControl", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
+		input "shadeAdjust_${buttonNumber}_held", "capability.doorControl", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
+		input "shadeAdjust_${buttonNumber}_doubleTapped", "capability.doorControl", title: "When Double Tapped", multiple: true, required: false, submitOnChange: collapseAll
+	}
         section(" "){}
-		section("Set Mode", hideable: true, hidden: !shallHide("mode_${buttonNumber}")) {
-			input "mode_${buttonNumber}_pushed", "mode", title: "When Pushed", required: false, submitOnChange: collapseAll
-			input "mode_${buttonNumber}_held", "mode", title: "When Held", required: false, submitOnChange: collapseAll
-		}
-		def phrases = location.helloHome?.getPhrases()*.label
-		if (phrases) {
+	section("Set Mode", hideable: true, hidden: !shallHide("mode_${buttonNumber}")) {
+		input "mode_${buttonNumber}_pushed", "mode", title: "When Pushed", required: false, submitOnChange: collapseAll
+		input "mode_${buttonNumber}_held", "mode", title: "When Held", required: false, submitOnChange: collapseAll
+		input "mode_${buttonNumber}_doubleTapped", "mode", title: "When Double Tapped", required: false, submitOnChange: collapseAll
+	}
+	def phrases = location.helloHome?.getPhrases()*.label
+	if (phrases) {
         	section("Run Routine", hideable: true, hidden: !shallHide("phrase_${buttonNumber}")) {
-				//log.trace phrases
-				input "phrase_${buttonNumber}_pushed", "enum", title: "When Pushed", required: false, options: phrases, submitOnChange: collapseAll
-				input "phrase_${buttonNumber}_held", "enum", title: "When Held", required: false, options: phrases, submitOnChange: collapseAll
-			}
+			//log.trace phrases
+			input "phrase_${buttonNumber}_pushed", "enum", title: "When Pushed", required: false, options: phrases, submitOnChange: collapseAll
+			input "phrase_${buttonNumber}_held", "enum", title: "When Held", required: false, options: phrases, submitOnChange: collapseAll
+			input "phrase_${buttonNumber}_doubleTapped", "enum", title: "When Double Tapped", required: false, options: phrases, submitOnChange: collapseAll
 		}
+	}
         section("Notifications:\nSMS, In App or Both", hideable: true, hidden: !shallHide("notifications_${buttonNumber}")) {
-        paragraph "****************\nWHEN PUSHED\n****************"
-			input "notifications_${buttonNumber}_pushed", "text", title: "Message", description: "Enter message to send", required: false, submitOnChange: collapseAll
-            input "phone_${buttonNumber}_pushed","phone" ,title: "Send Text To", description: "Enter phone number", required: false, submitOnChange: collapseAll
-            input "valNotify${buttonNumber}_pushed","bool" ,title: "Notify In App?", required: false, defaultValue: false, submitOnChange: collapseAll
-            paragraph "*************\nWHEN HELD\n*************"
-			input "notifications_${buttonNumber}_held", "text", title: "Message", description: "Enter message to send", required: false, submitOnChange: collapseAll
-			input "phone_${buttonNumber}_held", "phone", title: "Send Text To", description: "Enter phone number", required: false, submitOnChange: collapseAll
-			input "valNotify${buttonNumber}_held", "bool", title: "Notify In App?", required: false, defaultValue: false, submitOnChange: collapseAll			
-		}
-        if(enableSpec()){
-        	section(" "){}
-			section("Special", hideable: true, hidden: !shallHide("container_${buttonNumber}")) {
-				input "container_${buttonNumber}_pushed", "device.VirtualContainer", title: "When Pushed", required: false, submitOnChange: collapseAll
-				input "container_${buttonNumber}_held", "device.VirtualContainer", title: "When Held", required: false, submitOnChange: collapseAll
-			}
-        }
+        	paragraph "****************\nWHEN PUSHED\n****************"
+		input "notifications_${buttonNumber}_pushed", "text", title: "Message", description: "Enter message to send", required: false, submitOnChange: collapseAll
+            	input "phone_${buttonNumber}_pushed","phone" ,title: "Send Text To", description: "Enter phone number", required: false, submitOnChange: collapseAll
+            	input "valNotify${buttonNumber}_pushed","bool" ,title: "Notify In App?", required: false, defaultValue: false, submitOnChange: collapseAll
+            	paragraph "*************\nWHEN HELD\n*************"
+		input "notifications_${buttonNumber}_held", "text", title: "Message", description: "Enter message to send", required: false, submitOnChange: collapseAll
+		input "phone_${buttonNumber}_held", "phone", title: "Send Text To", description: "Enter phone number", required: false, submitOnChange: collapseAll
+		input "valNotify${buttonNumber}_held", "bool", title: "Notify In App?", required: false, defaultValue: false, submitOnChange: collapseAll
+		paragraph "*************\nWHEN DOUBLE TAPPED\n*************"
+		input "notifications_${buttonNumber}_doubleTapped", "text", title: "Message", description: "Enter message to send", required: false, submitOnChange: collapseAll
+		input "phone_${buttonNumber}_doubleTapped", "phone", title: "Send Text To", description: "Enter phone number", required: false, submitOnChange: collapseAll
+		input "valNotify${buttonNumber}_doubleTapped", "bool", title: "Notify In App?", required: false, defaultValue: false, submitOnChange: collapseAll
+	}        
 	}
 }
 
-def enableSpec() {
-	return false
+def shallHide(myFeature) {
+	if(collapseAll) return (settings["${myFeature}_pushed"]||settings["${myFeature}_held"]||settings["${myFeature}_doubleTapped"]||settings["${myFeature}"])
+	return true
 }
 
-def shallHide(myFeature) {
-	if(collapseAll) return (settings["${myFeature}_pushed"]||settings["${myFeature}_held"]||settings["${myFeature}"])
-	return true
+def showDouble() {
+	if(buttonDevice.capabilities.contains("DoubleTap")) return true
+	else return false
 }
 
 def getDescription(dNumber) {
     def descript = "Tap to configure"
     def anySettings = settings.find{it.key.contains("_${dNumber}_")}
-    if(anySettings) descript = "PUSHED:"+getDescDetails(dNumber,"_pushed")+"\n\nHELD:"+getDescDetails(dNumber,"_held")//"CONFIGURED : Tap to edit"
+    if(anySettings) descript = "PUSHED:"+getDescDetails(dNumber,"_pushed")+"\n\nHELD:"+getDescDetails(dNumber,"_held")+"\n\nTAPx2:"+getDescDetails(dNumber,"_doubleTapped")//"CONFIGURED : Tap to edit"
 	return descript
 }
 
@@ -237,10 +264,10 @@ def getDescDetails(bNum, type){
     	preferenceNames.each {eachPref->
         	def prefDetail = getPreferenceDetails().find{eachPref.key.contains(it.id)}	//gets decription of action being performed(eg Turn On)
         	def prefDevice = " : ${eachPref.value}" - "[" - "]"											//name of device the action is being performed on (eg Bedroom Fan)
-            def prefSubValue = settings[prefDetail.sub + numType]?:"(!Missing!)"
-            if(prefDetail.type=="normal") formattedPage += "\n- ${prefDetail.desc}${prefDevice}"
-            if(prefDetail.type=="hasSub") formattedPage += "\n- ${prefDetail.desc}${prefSubValue}${prefDevice}"
-            if(prefDetail.type=="bool") formattedPage += "\n- ${prefDetail.desc}"
+            	def prefSubValue = settings[prefDetail.sub + numType]?:"(!Missing!)"
+            	if(prefDetail.type=="normal") formattedPage += "\n- ${prefDetail.desc}${prefDevice}"
+            	if(prefDetail.type=="hasSub") formattedPage += "\n- ${prefDetail.desc}${prefSubValue}${prefDevice}"
+            	if(prefDetail.type=="bool") formattedPage += "\n- ${prefDetail.desc}"
     	}
 		return formattedPage
     }
