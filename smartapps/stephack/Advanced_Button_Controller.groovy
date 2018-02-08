@@ -11,6 +11,7 @@
  *		adjusted device list to look for "capability.pushableButton"
  *		adjusted buttonDevice subscription (pushed, held, doubleTapped)
  *		adjusted buttonEvent() to swap "name" and "value" as per new rules
+ * 2/08/18 - change formatting for Button Config Preview (Blue/Complete color)
  *
  *
  */
@@ -56,7 +57,7 @@ def chooseButton() {
                 }
                 else {
                 	for(i in 1..state.buttonCount){
-                		href "configButtonsPage", title: "Button ${i} - (Tap to Edit)", description: getDescription(i), params: [pbutton: i]
+                		href "configButtonsPage", title: "Button ${i}", state: getDescription(i)!="Tap to configure"? "complete": null, description: getDescription(i), params: [pbutton: i]
                     }
             	}
             }
@@ -219,7 +220,7 @@ def shallHide(myFeature) {
 }
 
 def getDescription(dNumber) {
-    def descript = "Nothing Configured"
+    def descript = "Tap to configure"
     def anySettings = settings.find{it.key.contains("_${dNumber}_")}
     if(anySettings) descript = "PUSHED:"+getDescDetails(dNumber,"_pushed")+"\n\nHELD:"+getDescDetails(dNumber,"_held")//"CONFIGURED : Tap to edit"
 	return descript
@@ -229,7 +230,7 @@ def getDescDetails(bNum, type){
 	def numType=bNum+type
 	def preferenceNames = settings.findAll{it.key.contains("_${numType}")}.sort()		//get all configured settings that: match button# and type, AND are not false
     if(!preferenceNames){
-    	return "  **Not Configured**"
+    	return "  **Not Configured** "
     }
     else {
     	def formattedPage =""
