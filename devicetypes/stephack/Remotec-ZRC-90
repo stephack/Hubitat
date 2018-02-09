@@ -18,15 +18,16 @@
  *			numberOfButtons adjusted to 8
  *			Removed Simulator and Tiles code
  *
- *
- *
+ * 02/08/18 - adjusted Preferences so they could be properly displayed in hubitat DTH (bool instead of boolean/addition[] for holdMode
+ *			
+ *			
  */
 metadata {
 	definition (name: "Remotec ZRC-90 Scene Master", namespace: "erocm123", author: "Eric Maycock") {
 		capability "Actuator"
 		capability "PushableButton"
         capability "Holdable Button"
-	capability "DoubleTapableButton"
+		capability "DoubleTapableButton"
 		capability "Configuration"
 		capability "Sensor"
         capability "Battery"
@@ -41,12 +42,13 @@ metadata {
 	}
 	
     
-    preferences {
-       input name: "holdMode", type: "enum", title: "Multiple \"held\" events on botton hold? With this option, the controller will send a \"held\" event about every second while holding down a button. If set to No it will send a \"held\" event a single time when the button is released.", defaultValue: "2", displayDuringSetup: true, required: false, options: [
-                   "1":"Yes",
-                   "2":"No"]
-       input name: "debug", type: "boolean", title: "Enable Debug?", defaultValue: false, displayDuringSetup: false, required: false
-    }
+    preferences {         
+        input name: "holdMode", type: "enum", title: "Multiple \"held\" events on botton hold? With this option, the controller will send a \"held\" event about every second while holding down a button. If set to No it will send a \"held\" event a single time when the button is released.", options: [["1":"Yes"],["2":"No"]], description: "", required: true
+    	input name: "debug", type: "bool", title: "Enable Debug?", defaultValue: false, displayDuringSetup: false, required: false
+}
+
+        
+    
 }
 
 def parse(String description) {
@@ -72,7 +74,7 @@ def zwaveEvent(hubitat.zwave.commands.centralscenev1.CentralSceneNotification cm
         logging("sequenceNumber: $cmd.sequenceNumber")
 
         sendEvent(name: "sequenceNumber", value: cmd.sequenceNumber, displayed:false)
-        switch (cmd.keyAttributes) {
+    switch (cmd.keyAttributes) {
            case 0:
               buttonEvent(cmd.sceneNumber, "pushed")
            break
