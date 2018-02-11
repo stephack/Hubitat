@@ -69,7 +69,6 @@ metadata {
             }
         }
         
-        childDeviceTiles("all")
         
         standardTile("refresh", "device.switch", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
             state "default", label: "", action: "refresh.refresh", icon: "st.secondary.refresh"
@@ -115,7 +114,7 @@ def zwaveEvent(hubitat.zwave.commands.basicv1.BasicReport cmd, ep = null) {
             }
         }
         return event
-    }
+    
 }
 
 def zwaveEvent(hubitat.zwave.commands.basicv1.BasicSet cmd) {
