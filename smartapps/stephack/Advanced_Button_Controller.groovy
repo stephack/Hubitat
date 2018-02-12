@@ -95,23 +95,23 @@ def getButtonSections(buttonNumber) {
         //section(){	//"Hardware specific info on button selection:") {
 	//		if(hwSpecifics== false) paragraph image: "https://cdn.rawgit.com/stephack/ABC/master/resources/images/${picNameNoSpace}", "${getSpecText()}"
     	//}
-        section("Switches (Turn On)", hideable: true, hidden: !shallHide("lightOn_${buttonNumber}")) {
+        section("Switches (Turn On)", hideable: false, hidden: !shallHide("lightOn_${buttonNumber}")) {
 		input "lightOn_${buttonNumber}_pushed", "capability.switch", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
 		input "lightOn_${buttonNumber}_held", "capability.switch", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
 		input "lightOn_${buttonNumber}_doubleTapped", "capability.switch", title: "When Double Tapped", multiple: true, required: false, submitOnChange: collapseAll
 	}
-	section("Switches (Turn Off)", hideable: true, hidden: !shallHide("lightOff_${buttonNumber}")) {
+	section("Switches (Turn Off)", hideable: false, hidden: !shallHide("lightOff_${buttonNumber}")) {
 		input "lightOff_${buttonNumber}_pushed", "capability.switch", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
 		input "lightOff_${buttonNumber}_held", "capability.switch", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
 		input "lightOff_${buttonNumber}_doubleTapped", "capability.switch", title: "When Double Tapped", multiple: true, required: false, submitOnChange: collapseAll
 	}
-        section("Switches (Toggle On/Off)", hideable: true, hidden: !shallHide("lights_${buttonNumber}")) {
+        section("Switches (Toggle On/Off)", hideable: false, hidden: !shallHide("lights_${buttonNumber}")) {
 		input "lights_${buttonNumber}_pushed", "capability.switch", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
 		input "lights_${buttonNumber}_held", "capability.switch", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
 		input "lights_${buttonNumber}_doubleTapped", "capability.switch", title: "When Double Tapped", multiple: true, required: false, submitOnChange: collapseAll
 	}
 	section(" "){}
-	section("Dimmers (On to Level - Group 1)", hideable: true, hidden: !(shallHide("lightDim_${buttonNumber}") || shallHide("valLight${buttonNumber}"))) {
+	section("Dimmers (On to Level - Group 1)", hideable: false, hidden: !(shallHide("lightDim_${buttonNumber}") || shallHide("valLight${buttonNumber}"))) {
 		input "lightDim_${buttonNumber}_pushed", "capability.switchLevel", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
 		input "valLight${buttonNumber}_pushed", "number", title: "Bright Level", multiple: false, required: false, description: "0 to 100%"
 		input "lightDim_${buttonNumber}_held", "capability.switchLevel", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
@@ -119,7 +119,7 @@ def getButtonSections(buttonNumber) {
 		input "lightDim_${buttonNumber}_doubleTapped", "capability.switchLevel", title: "When Double Tapped", multiple: true, required: false, submitOnChange: collapseAll
 		input "valLight${buttonNumber}_doubleTapped", "number", title: "Bright Level", multiple: false, required: false, description: "0 to 100%"
 	}
-	section("Dimmers (On to Level - Group 2)", hideable: true, hidden: !(shallHide("lightD2m_${buttonNumber}") || shallHide("valLight2${buttonNumber}"))) {
+	section("Dimmers (On to Level - Group 2)", hideable: false, hidden: !(shallHide("lightD2m_${buttonNumber}") || shallHide("valLight2${buttonNumber}"))) {
 		input "lightD2m_${buttonNumber}_pushed", "capability.switchLevel", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
 		input "valLight2${buttonNumber}_pushed", "number", title: "Bright Level", multiple: false, required: false, description: "0 to 100%"
 		input "lightD2m_${buttonNumber}_held", "capability.switchLevel", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
@@ -127,7 +127,7 @@ def getButtonSections(buttonNumber) {
 		input "lightD2m_${buttonNumber}_doubleTapped", "capability.switchLevel", title: "When Double Tapped", multiple: true, required: false, submitOnChange: collapseAll
 		input "valLight2${buttonNumber}_doubleTapped", "number", title: "Bright Level", multiple: false, required: false, description: "0 to 100%"
 	}
-        section("Dimmers (Increase Level By)", hideable: true, hidden: !(shallHide("dimPlus_${buttonNumber}") || shallHide("valDimP${buttonNumber}"))) {
+        section("Dimmers (Increase Level By)", hideable: false, hidden: !(shallHide("dimPlus_${buttonNumber}") || shallHide("valDimP${buttonNumber}"))) {
 		input "dimPlus_${buttonNumber}_pushed", "capability.switchLevel", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
             	input "valDimP${buttonNumber}_pushed", "number", title: "When Pushed Increase by", multiple: false, required: false, description: "0 to 15"
 		input "dimPlus_${buttonNumber}_held", "capability.switchLevel", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
@@ -135,7 +135,7 @@ def getButtonSections(buttonNumber) {
 		input "dimPlus_${buttonNumber}_doubleTapped", "capability.switchLevel", title: "When Double Tapped", multiple: true, required: false, submitOnChange: collapseAll
             	input "valDimP${buttonNumber}_doubleTapped", "number", title: "When Double Tapped Increase by", multiple: false, required: false, description: "0 to 15"
 	}
-   	section("Dimmers (Decrease Level By)", hideable: true, hidden: !(shallHide("dimMinus_${buttonNumber}") || shallHide("valDimM${buttonNumber}"))) {
+   	section("Dimmers (Decrease Level By)", hideable: false, hidden: !(shallHide("dimMinus_${buttonNumber}") || shallHide("valDimM${buttonNumber}"))) {
 		input "dimMinus_${buttonNumber}_pushed", "capability.switchLevel", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
             	input "valDimM${buttonNumber}_pushed", "number", title: "When Pushed Decrease by", multiple: false, required: false, description: "0 to 15"
 		input "dimMinus_${buttonNumber}_held", "capability.switchLevel", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
@@ -143,7 +143,7 @@ def getButtonSections(buttonNumber) {
 		input "dimMinus_${buttonNumber}_doubleTapped", "capability.switchLevel", title: "When Double Tapped", multiple: true, required: false, submitOnChange: collapseAll
             	input "valDimM${buttonNumber}_doubleTapped", "number", title: "When Double Tapped Decrease by", multiple: false, required: false, description: "0 to 15"
 	}
-        section("Dimmers (Toggle OnToLevel/Off)", hideable: true, hidden: !(shallHide("lightsDT_${buttonNumber}") || shallHide("valDT${buttonNumber}"))) {
+        section("Dimmers (Toggle OnToLevel/Off)", hideable: false, hidden: !(shallHide("lightsDT_${buttonNumber}") || shallHide("valDT${buttonNumber}"))) {
 		input "lightsDT_${buttonNumber}_pushed", "capability.switchLevel", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
 		input "valDT${buttonNumber}_pushed", "number", title: "Bright Level", required: false, description: "0 to 100%"
 		input "lightsDT_${buttonNumber}_held", "capability.switchLevel", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
@@ -152,12 +152,12 @@ def getButtonSections(buttonNumber) {
 		input "valDT${buttonNumber}_doubleTapped", "number", title: "Bright Level", required: false, description: "0 to 100%"
 	}
         section(" "){}
-	section("Speakers (Toggle Play/Pause)", hideable: true, hidden: !shallHide("speakerpp_${buttonNumber}")) {
+	section("Speakers (Toggle Play/Pause)", hideable: false, hidden: !shallHide("speakerpp_${buttonNumber}")) {
 		input "speakerpp_${buttonNumber}_pushed", "capability.musicPlayer", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
 		input "speakerpp_${buttonNumber}_held", "capability.musicPlayer", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
 		input "speakerpp_${buttonNumber}_doubleTapped", "capability.musicPlayer", title: "When Double Tapped", multiple: true, required: false, submitOnChange: collapseAll
 	}
-        section("Speakers (Increase Vol By)", hideable: true, hidden: !(shallHide("speakervu_${buttonNumber}") || shallHide("valSpeakU${buttonNumber}"))) {
+        section("Speakers (Increase Vol By)", hideable: false, hidden: !(shallHide("speakervu_${buttonNumber}") || shallHide("valSpeakU${buttonNumber}"))) {
 		input "speakervu_${buttonNumber}_pushed", "capability.musicPlayer", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
             	input "valSpeakU${buttonNumber}_pushed", "number", title: "When Pushed Increase by", multiple: false, required: false, description: "0 to 15"
 		input "speakervu_${buttonNumber}_held", "capability.musicPlayer", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
@@ -165,7 +165,7 @@ def getButtonSections(buttonNumber) {
 		input "speakervu_${buttonNumber}_doubleTapped", "capability.musicPlayer", title: "When Double Tapped", multiple: true, required: false, submitOnChange: collapseAll
             	input "valSpeakU${buttonNumber}_doubleTapped", "number", title: "When Double Tapped Increase by", multiple: false, required: false, description: "0 to 15"
 	}
-        section("Speakers (Decrease Vol By)", hideable: true, hidden: !(shallHide("speakervd_${buttonNumber}") || shallHide("valSpeakD${buttonNumber}"))) {
+        section("Speakers (Decrease Vol By)", hideable: false, hidden: !(shallHide("speakervd_${buttonNumber}") || shallHide("valSpeakD${buttonNumber}"))) {
 		input "speakervd_${buttonNumber}_pushed", "capability.musicPlayer", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
      		input "valSpeakD${buttonNumber}_pushed", "number", title: "When Pushed Decrease by", multiple: false, required: false, description: "0 to 15"
 		input "speakervd_${buttonNumber}_held", "capability.musicPlayer", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
@@ -173,53 +173,53 @@ def getButtonSections(buttonNumber) {
 		input "speakervd_${buttonNumber}_doubleTapped", "capability.musicPlayer", title: "When Double Tapped", multiple: true, required: false, submitOnChange: collapseAll
             	input "valSpeakD${buttonNumber}_doubleTapped", "number", title: "When Double Tapped Decrease by", multiple: false, required: false, description: "0 to 15"
 	}
-        section("Speakers (Go to Next Track)", hideable: true, hidden: !shallHide("speakernt_${buttonNumber}")) {
+        section("Speakers (Go to Next Track)", hideable: false, hidden: !shallHide("speakernt_${buttonNumber}")) {
 		input "speakernt_${buttonNumber}_pushed", "capability.musicPlayer", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
 		input "speakernt_${buttonNumber}_held", "capability.musicPlayer", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
 		input "speakernt_${buttonNumber}_doubleTapped", "capability.musicPlayer", title: "When Double Tapped", multiple: true, required: false, submitOnChange: collapseAll
 	}
-        section("Speakers (Toggle Mute/Unmute)", hideable: true, hidden: !shallHide("speakermu_${buttonNumber}")) {
+        section("Speakers (Toggle Mute/Unmute)", hideable: false, hidden: !shallHide("speakermu_${buttonNumber}")) {
 		input "speakermu_${buttonNumber}_pushed", "capability.musicPlayer", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
 		input "speakermu_${buttonNumber}_held", "capability.musicPlayer", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
 		input "speakermu_${buttonNumber}_doubleTapped", "capability.musicPlayer", title: "When Double Tapped", multiple: true, required: false, submitOnChange: collapseAll
 	}
         section(" "){}
-        section("Sirens (Toggle)", hideable: true, hidden: !shallHide("sirens_${buttonNumber}")) {
+        section("Sirens (Toggle)", hideable: false, hidden: !shallHide("sirens_${buttonNumber}")) {
 		input "sirens_${buttonNumber}_pushed","capability.alarm" ,title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
 		input "sirens_${buttonNumber}_held", "capability.alarm", title: "When Held", multiple: true, required: false, submitOnChange: true
 		input "sirens_${buttonNumber}_doubleTapped", "capability.alarm", title: "When Double Tapped", multiple: true, required: false, submitOnChange: true
 	}
-        section("Locks (Lock Only)", hideable: true, hidden: !shallHide("locks_${buttonNumber}")) {
+        section("Locks (Lock Only)", hideable: false, hidden: !shallHide("locks_${buttonNumber}")) {
 		input "locks_${buttonNumber}_pushed", "capability.lock", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
 		input "locks_${buttonNumber}_held", "capability.lock", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
 		input "locks_${buttonNumber}_doubleTapped", "capability.lock", title: "When Double Tapped", multiple: true, required: false, submitOnChange: collapseAll
 	}
-	section("Fans (Adjust - Low, Medium, High, Off)", hideable: true, hidden: !shallHide("fanAdjust_${buttonNumber}")) {
+	section("Fans (Adjust - Low, Medium, High, Off)", hideable: false, hidden: !shallHide("fanAdjust_${buttonNumber}")) {
 		input "fanAdjust_${buttonNumber}_pushed", "capability.switchLevel", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
 		input "fanAdjust_${buttonNumber}_held", "capability.switchLevel", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
 		input "fanAdjust_${buttonNumber}_doubleTapped", "capability.switchLevel", title: "When Double Tapped", multiple: true, required: false, submitOnChange: collapseAll
 	}
-	section("Shades (Adjust - Up, Down, or Stop)", hideable: true, hidden: !shallHide("shadeAdjust_${buttonNumber}")) {
+	section("Shades (Adjust - Up, Down, or Stop)", hideable: false, hidden: !shallHide("shadeAdjust_${buttonNumber}")) {
 		input "shadeAdjust_${buttonNumber}_pushed", "capability.doorControl", title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
 		input "shadeAdjust_${buttonNumber}_held", "capability.doorControl", title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
 		input "shadeAdjust_${buttonNumber}_doubleTapped", "capability.doorControl", title: "When Double Tapped", multiple: true, required: false, submitOnChange: collapseAll
 	}
         section(" "){}
-	section("Set Mode", hideable: true, hidden: !shallHide("mode_${buttonNumber}")) {
+	section("Set Mode", hideable: false, hidden: !shallHide("mode_${buttonNumber}")) {
 		input "mode_${buttonNumber}_pushed", "mode", title: "When Pushed", required: false, submitOnChange: collapseAll
 		input "mode_${buttonNumber}_held", "mode", title: "When Held", required: false, submitOnChange: collapseAll
 		input "mode_${buttonNumber}_doubleTapped", "mode", title: "When Double Tapped", required: false, submitOnChange: collapseAll
 	}
 	def phrases = location.helloHome?.getPhrases()*.label
 	if (phrases) {
-        	section("Run Routine", hideable: true, hidden: !shallHide("phrase_${buttonNumber}")) {
+        	section("Run Routine", hideable: false, hidden: !shallHide("phrase_${buttonNumber}")) {
 			//log.trace phrases
 			input "phrase_${buttonNumber}_pushed", "enum", title: "When Pushed", required: false, options: phrases, submitOnChange: collapseAll
 			input "phrase_${buttonNumber}_held", "enum", title: "When Held", required: false, options: phrases, submitOnChange: collapseAll
 			input "phrase_${buttonNumber}_doubleTapped", "enum", title: "When Double Tapped", required: false, options: phrases, submitOnChange: collapseAll
 		}
 	}
-        section("Notifications:\nSMS, In App or Both", hideable: true, hidden: !shallHide("notifications_${buttonNumber}")) {
+        section("Notifications:\nSMS, In App or Both", hideable: false, hidden: !shallHide("notifications_${buttonNumber}")) {
         	paragraph "****************\nWHEN PUSHED\n****************"
 		input "notifications_${buttonNumber}_pushed", "text", title: "Message", description: "Enter message to send", required: false, submitOnChange: collapseAll
             	input "phone_${buttonNumber}_pushed","phone" ,title: "Send Text To", description: "Enter phone number", required: false, submitOnChange: collapseAll
@@ -392,7 +392,7 @@ def speakermute(device) {
 
 def levelUp(device, inclevel) {
 	log.debug "Incrementing Level (by +$inclevel: $device"
-	def currentVol = device.currentValue('level')[0]	//currentlevel return a list...[0] is first item in list ie volume level
+	def currentVol = device.currentLevel[0]//device.currentValue('level')[0]	//currentlevel return a list...[0] is first item in list ie volume level
     def newVol = currentVol + inclevel
   	device.setLevel(newVol)
     log.debug "Level increased by $inclevel to $newVol"
@@ -400,7 +400,7 @@ def levelUp(device, inclevel) {
 
 def levelDown(device, declevel) {
 	log.debug "Decrementing Level (by -declevel: $device"
-	def currentVol = device.currentValue('level')[0]
+	def currentVol = device.currentLevel[0]//device.currentValue('level')[0]
     def newVol = currentVol.toInteger()-declevel
   	device.setLevel(newVol)
     log.debug "Level decreased by $declevel to $newVol"
@@ -452,7 +452,14 @@ def smsHandle(phone, msg){
 
 def changeMode(mode) {
 	log.debug "Changing Mode to: $mode"
-	if (location.mode != mode && location.modes?.find { it.name == mode }) setLocationMode(mode)
+    log.debug mode[0]
+    def tess = location.modes
+    tess.each{momo->
+        log.error momo.name
+        if(momo.name == mode) log.info "found it"
+    }
+    log.error tess
+	if (location.mode != mode && location.modes?.find { it.name == mode[0] }) setLocationMode(mode)
 }
 
 def cyclePL(device) {
