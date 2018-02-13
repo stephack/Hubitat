@@ -14,6 +14,9 @@ definition(
     author: "Stephan Hackett",
     description: "Configure devices with buttons like the Aeon Labs Minimote and Lutron Pico Remotes.",
     category: "My Apps",
+    iconUrl: "https://cdn.rawgit.com/stephack/ABC/master/resources/images/abcNew.png",
+    iconX2Url: "https://cdn.rawgit.com/stephack/ABC/master/resources/images/abcNew.png",
+    iconX3Url: "https://cdn.rawgit.com/stephack/ABC/master/resources/images/abcNew.png",
 )
 
 preferences {
