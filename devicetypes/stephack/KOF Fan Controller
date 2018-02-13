@@ -22,7 +22,7 @@
  */
 
 metadata {
-    definition (name: "KOF Fan Controller", namespace: "stephack", author: "Stephan Hackett") {
+    definition (name: "Hampton Bay Zigbee Fan Controller", namespace: "stephack", author: "Stephan Hackett") {
 		capability "Actuator"
         capability "Switch"
         capability "Switch Level"
