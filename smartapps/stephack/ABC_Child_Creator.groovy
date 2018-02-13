@@ -26,7 +26,7 @@
 def version(){"v0.2.180213"}
 
 definition(
-    name: "ABC Child Creator",
+    name: "ABC Button Mapping",
     namespace: "stephack",
     author: "Stephan Hackett",
     description: "Assign tasks to your Button Controller Devices",
