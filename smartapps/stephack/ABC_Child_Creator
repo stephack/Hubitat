@@ -21,7 +21,7 @@
  *
  *2/12/18
  *		Switched to parent/child config	
- *
+ *		removed button pics and descriptive text (not utilized by hubitat)
  */
 def version(){"v0.2.180213"}
 
@@ -94,12 +94,7 @@ def configButtonsPage(params) {
 }
 
 def getButtonSections(buttonNumber) {
-	return {
-    	//def picNameNoSpace = "${state.buttonType}${state.currentButton}.png"-" "-" "-" "-"/"-"-"
-        //log.debug picNameNoSpace
-        //section(){	//"Hardware specific info on button selection:") {
-	//		if(hwSpecifics== false) paragraph image: "https://cdn.rawgit.com/stephack/ABC/master/resources/images/${picNameNoSpace}", "${getSpecText()}"
-    	//}
+	return {    	
         def myDetail
         for(i in 1..17) {//Build 1st 17 Button Config Options
         	myDetail = getPrefDetails().find{it.sOrder==i}
@@ -504,99 +499,3 @@ private def textHelp() {
     	" SmartApp are also required for this functionality!\nSearch the forums for details."
 	}
 }
-  
-def getSpecText(){
-	if(state.buttonType == "Lutron Pico") {
-    	switch (state.currentButton){
-        	case 1: return "Top Button"; break
-			case 2: return "Bottom Button"; break
-			case 3: return "Middle Button";break
-			case 4: return "Up Button"; break
-			case 5: return "Down Button"; break        
-        }
-    }
-	if(state.buttonType.contains("Aeon Minimote")) {
-    	switch (state.currentButton){
-        	case 1: return "Top Left Button"; break
-			case 2: return "Top Right Button"; break
-			case 3: return "Lower Left Button";break
-			case 4: return "Lower Right"; break
-        }
-    }
-	if(state.buttonType.contains("WD100+ Dimmer")) {
-    	switch (state.currentButton){
-        	case 1: return "Double-Tap Upper Paddle"; break
-			case 2: return "Double-Tap Lower Paddle"; break
-			case 3: return "Triple-Tap Upper Paddle";break
-			case 4: return "Triple-Tap Lower Paddle"; break
-            case 5: return "Press & Hold Upper Paddle\n(See user guide for quirks)"; break
-			case 6: return "Press & Hold Lower Paddle\n(See user guide for quirks)"; break
-			case 7: return "Single Tap Upper Paddle\n(See user guide for quirks)"; break
-			case 8: return "Single Tap Lower Paddle\n(See user guide for quirks)"; break
-        }
-    }
-    if(state.buttonType.contains("WS100+ Switch")) {
-    	switch (state.currentButton){
-        	case 1: return "Double-Tap Upper Paddle"; break
-			case 2: return "Double-Tap Lower Paddle"; break
-			case 3: return "Triple-Tap Upper Paddle";break
-			case 4: return "Triple-Tap Lower Paddle"; break
-            case 5: return "Press & Hold Upper Paddle"; break
-			case 6: return "Press & Hold Lower Paddle"; break
-			case 7: return "Single Tap Upper Paddle";break
-			case 8: return "Single Tap Lower Paddle"; break
-        }
-    }
-    if(state.buttonType.contains("Inovelli")) {
-    	switch (state.currentButton){
-        	case 1: return "NOT OPERATIONAL - DO NOT USE"; break
-        	case 2: return "2X Tap Upper Paddle = Pushed\n2X Tap Lower Paddle = Held"; break
-			case 3: return "3X Tap Upper Paddle = Pushed\n3X Tap Lower Paddle = Held"; break
-			case 4: return "4X Tap Upper Paddle = Pushed\n4X Tap Lower Paddle = Held";break
-			case 5: return "5X Tap Upper Paddle = Pushed\n5X Tap Lower Paddle = Held"; break
-            case 6: return "Hold Upper Paddle = Pushed\nHold Lower Paddle = Held"; break
-        }
-    }
-    if(state.buttonType.contains("ZRC-90")) {
-    	switch (state.currentButton){
-        	case 1: return "Tap or Hold Button 1"; break
-        	case 2: return "Tap or Hold Button 2"; break
-			case 3: return "Tap or Hold Button 3"; break
-			case 4: return "Tap or Hold Button 4";break
-			case 5: return "Tap or Hold Button 5"; break
-            case 6: return "Tap or Hold Button 6"; break
-            case 7: return "Tap or Hold Button 7"; break
-        	case 8: return "Tap or Hold Button 8"; break
-			case 9: return "2X Tap Button 1\nHold Not Available"; break
-			case 10: return "2X Tap Button 2\nHold Not Available";break
-			case 11: return "2X Tap Button 3\nHold Not Available"; break
-            case 12: return "2X Tap Button 4\nHold Not Available"; break
-            case 13: return "2X Tap Button 5\nHold Not Available"; break
-        	case 14: return "2X Tap Button 6\nHold Not Available"; break
-			case 15: return "2X Tap Button 7\nHold Not Available"; break
-			case 16: return "2X Tap Button 8\nHold Not Available";break			
-        }
-    }
-    return "Not Specified By Device"
-}
-
-
-/*FOR NEW INPUTS//////////////
-1. add input to config
-2. add info to detailMappings including subvalue if needed
-3. ensure correct type is used in map..or create a new one with its own formattedPage
-
-
-
-FOR NEW BUTTON DEVICE TYPES///////////////
-1. ensure device reports buttonNumber
-2. if not, add sendEvent to DTH as needed OR just enter manually
-3. add any special instructions to getSpecText() using dth name
-4. create pics for each button using dthName+dNumber
-
-
-
-
-
-
-*/
