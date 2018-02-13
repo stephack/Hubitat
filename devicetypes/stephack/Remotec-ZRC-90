@@ -11,6 +11,8 @@
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  *  for the specific language governing permissions and limitations under the License.
  *
+ *
+ *
  *	Edits/Updates by Stephan Hackett (stephack)
  *	02/06/18 - 	removed Button capability and added pushable and doubleTapped
  *			zwaveEvent case 3 adjusted to send doubleTapped event instead 
@@ -20,10 +22,12 @@
  *
  * 02/08/18 - adjusted Preferences so they could be properly displayed in hubitat DTH (bool instead of boolean/addition[] for holdMode
  *			
- *			
+ *	
+ * 02/12/18 - added methods for push(), hold(), doubleTap() - allows execution via device page
+ *
  */
 metadata {
-	definition (name: "Remotec ZRC-90 Scene Master", namespace: "erocm123", author: "Eric Maycock") {
+	definition (name: "Remotec ZRC-90 Scene Master", namespace: "stephack", author: "Stephan Hackett") {
 		capability "Actuator"
 		capability "PushableButton"
         capability "Holdable Button"
@@ -144,4 +148,16 @@ def configure() {
 def ping() {
     logging("ping()")
 	logging("Battery Device - Not sending ping commands")
+}
+
+def push(value) {    
+    sendEvent(name: "pushed", value: value, descriptionText: "$device.displayName button $value was pushed", isStateChange: true)
+}
+
+def hold(value) {
+    sendEvent(name: "held", value: value, descriptionText: "$device.displayName button $value was held", isStateChange: true)
+}
+
+def doubleTap(value) {
+    sendEvent(name: "doubleTapped", value: value, descriptionText: "$device.displayName button $value was double tapped", isStateChange: true)
 }
