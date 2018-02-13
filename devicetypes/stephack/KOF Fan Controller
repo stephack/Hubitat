@@ -16,6 +16,9 @@
  *  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  *  for the specific language governing permissions and limitations under the License.
+ *
+ *	2/12/18 - added "Fan Control" capability and replaced setFanSpeed with built in setSpeed
+ *
  */
 
 metadata {
@@ -25,6 +28,7 @@ metadata {
         capability "Switch Level"
         capability "Light"
         capability "Sensor" 
+        capability "Fan Control" 
         //capability "Polling"
         //capability "Configuration"
         //capability "Refresh"
@@ -35,7 +39,7 @@ metadata {
         command "fanSpeed3"
         command "fanSpeed4"
         command "fanSpeedBreeze"
-        command "setFanSpeed", ["number"]
+        //command "setFanSpeed", ["number"]
         command "fanSpeedResumeLast"
         
         attribute "fanMode", "string" 			//stores fanspeed
@@ -121,7 +125,7 @@ def configure() {
             //zigbee.levelConfig(0, 300)+
 }
 
-def setFanSpeed(speed) {
+def setSpeed(speed) {
 	log.info "Adjusting Fan Speed to "+ getFanName()[speed]
     return zigbee.writeAttribute(0x0202, 0x0000, 0x30, speed.toInteger())
 }
