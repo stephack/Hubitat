@@ -121,7 +121,7 @@ def getButtonSections(buttonNumber) {
                 if(showDouble()) input "phrase_${buttonNumber}_doubleTapped", "enum", title: "When Double Tapped", required: false, options: phrases, submitOnChange: collapseAll
 			}
 		}
-        section("Notifications:\nSMS, In App or Both", hideable:true , hidden: !shallHide("notifications_${buttonNumber}")) {
+        section("Notifications:\nSMS", hideable:true , hidden: !shallHide("notifications_${buttonNumber}")) {
         paragraph "****************\nPUSHED\n****************"
 			input "notifications_${buttonNumber}_pushed", "text", title: "Message To Send When Pushed:", description: "Enter message to send", required: false, submitOnChange: collapseAll
             input "phone_${buttonNumber}_pushed","phone" ,title: "Send Text To:", description: "Enter phone number", required: false, submitOnChange: collapseAll
