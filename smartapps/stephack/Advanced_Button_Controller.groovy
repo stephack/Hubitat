@@ -27,6 +27,12 @@ preferences {
 
 def mainPage() {
 	return dynamicPage(name: "mainPage", title: "", install: true, uninstall: true) {
+        if(!state.abcInstalled) {
+            section("Hit Done to install ABC App!") {
+        }
+            
+        }
+        else {
     	def childApps = getAllChildApps()
         def childVer = "Initial Setup - Version Unknown"
         if(childApps.size() > 0) {
@@ -43,10 +49,12 @@ def mainPage() {
 		)		
    		}
         //remove("Uninstall ABC App","WARNING!!","This will remove the ENTIRE SmartApp, including all configs listed above.")
+        }
     }
 }
 
 def installed() {
+    state.abcInstalled = true
 	initialize()
 }
 
