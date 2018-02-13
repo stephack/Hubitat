@@ -10,7 +10,7 @@
 definition(
     name: "Advanced Button Controller",
     namespace: "stephack",
-    //singleInstance: true,
+    singleInstance: true,
     author: "Stephan Hackett",
     description: "Configure devices with buttons like the Aeon Labs Minimote and Lutron Pico Remotes.",
     category: "My Apps",
@@ -21,7 +21,7 @@ definition(
 
 preferences {
 	page(name: "mainPage")
-    page(name: "aboutPage")
+    page(name: "aboutPage", nextPage: "mainPage")
 	
 }
 
@@ -33,7 +33,7 @@ def mainPage() {
         	childVer = childApps.first().version()
         }
         section("Create a new button device mapping.") {
-            app(name: "childApps", appName: "ABC Child Creator", namespace: "stephack", title: "New Button Device Mapping", multiple: true)
+            app(name: "childApps", appName: "ABC Button Mapping", namespace: "stephack", title: "New Button Device Mapping", multiple: true)
         }
         section("Version Info, User's Guide") {
        	href (name: "aboutPage", title: "Advanced Button Controller \n"+childVer, 
