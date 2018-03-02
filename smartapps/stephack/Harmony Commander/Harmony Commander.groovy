@@ -39,7 +39,7 @@ def mainPage() {
         		childVer = childApps.first().version()
         	}
         	section("Create a harmony command or sequence of commands.") {
-           		app(name: "childApps", appName: "HC Config", namespace: "stephack", title: "New Harmony Command(s)", multiple: true)
+           		app(name: "childApps", appName: "Harmony Command Config", namespace: "stephack", title: "New Harmony Command(s)", multiple: true)
         	}
         	section("Version Info, User's Guide") {
        			href (name: "aboutPage", title: "Harmony Commander \n"+childVer, 
