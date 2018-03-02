@@ -2,16 +2,16 @@
  *
  *	Harmony Command Config
  *
- *	Author: Stephan Hackett
+ *	Author: Stephan Hackett, Daniel Ogorchock
  * 
  * 
  */
-def version(){"v0.1.180301"}
+def version(){"v0.1.180302"}
 
 definition(
     name: "Harmony Command Config",
     namespace: "stephack",
-    author: "Stephan Hackett",
+    author: "Stephan Hackett, Daniel Ogorchock",
     description: "Send commands to your harmony hub",
     category: "My Apps",
     parent: "stephack:Harmony Commander",
@@ -29,7 +29,7 @@ def chooseCommandType() {
 	dynamicPage(name: "chooseCommandType", install: true, uninstall: true) {
 		section("") {
             paragraph "\n\n****************************************\nSTEP 1: Select Device Type\n****************************************\n"
-			input "commandType", "enum", title: "Http Device Type", multiple: false, required: true, submitOnChange: true, options: ["Activity Control","Device Command Sequence", "URL Path"]
+			input "commandType", "enum", title: "Http Device Type", multiple: false, required: true, submitOnChange: true, options: ["Activity Control","Device Commands"]
 		}
        // section("Set Custom Name (Optional)") {
         //	label title: "Assign a name:", required: false
@@ -39,21 +39,20 @@ def chooseCommandType() {
                 paragraph "\n\n****************************************\nSTEP 2: Configure Http Server\n****************************************\n"
 				input(name: "deviceIP", type: "string", title:"HTTP Server IP Address", description: "Enter IP Address of your HTTP server", required: true, submitOnChange: true)
 				input(name: "devicePort", type: "string", title:"Server Port", description: "Enter Port of your HTTP server", required: true, submitOnChange: true)
-				paragraph "\n\n****************************************\nSTEP 3: Configure Virtual Switch\n****************************************\n"
-                input(name: "alexaName", type: "string", title:"Virtual Switch Name", description: "Use a name that works well with Alexa/GV", required: false, submitOnChange: true)
-                if(commandType == "URL Path") {
-                	input(name: "deviceMethod", type: "enum", title: "POST, GET, or PUT", options: ["POST","GET","PUT"], defaultValue: "POST", required: true, submitOnChange: true)
-                    input(name: "devicePath", type: "string", title:"URL Path", description: "Rest of the URL, include forward slash.", submitOnChange: true)
+				if(deviceIP && devicePort){
+                	paragraph "\n\n****************************************\nSTEP 3: Configure Virtual Switch\n****************************************\n"
+                	input(name: "alexaName", type: "string", title:"Virtual Switch Name", description: "Voice compatible name recommended", required: true, submitOnChange: true)
                 }
-                else if(deviceIP && devicePort){
+                if(deviceIP && devicePort && alexaName){
+                    paragraph "\n\n****************************************\nSTEP 4: Configure Hub Settings\n****************************************\n"
                 	input "hub", "enum", title: "Select Hub", required: false, options: getFromApi("hub"), submitOnChange: true
         			if(hub && commandType == "Activity Control") input "activities", "enum", title: "Select Activity", required: false, options: getFromApi("activities"), submitOnChange: true
-                    if(hub && commandType == "Device Command Sequence"){
+                    if(hub && commandType == "Device Commands"){
                         input "devices", "enum", title: "Select Device", required: false, options: getFromApi("devices"), submitOnChange: true
-                        input "numOfComms", "number", title: "Enter the # of commands to excute", required: true, submitOnChange: true
-                        if(devices && numOfComms>0) {
-                            paragraph "\n\n****************************************\nSTEP 4: Configure Commands\n****************************************\n"
-                            getCommands(numOfComms)
+                        if(devices) {
+                            paragraph "\n\n****************************************\nSTEP 5: Configure Commands\n****************************************\n"
+                            input "numOfComms", "number", title: "Enter the # of commands to excute", required: true, submitOnChange: true
+                            if(numOfComms>0) getCommands(numOfComms)
                         }
                     }                    
                 }
@@ -62,25 +61,15 @@ def chooseCommandType() {
     }    
 }
 
-private getOptionsInput(item) {
-    input "${item}", "enum",
-        title: "Select ${item}",
-	//defaultValue: "none",
-	required: false,
-	displayDuringSetup: true,
-	options: getFromApi(item)
-}
-
-def getCommands(num){
+private def getCommands(num){
     for(i in 1..num) {
-        input "deviceDelay${i}", "number", description: "sds", title: "Delay BEFORE Command ${i} (secs)"
-    	input "deviceCommand${i}", "enum", description: "", title: "Command ${i}", options: getFromApi("commands")
-        
+    	input "deviceCommand${i}", "enum", description: "", title: "COMMAND ${i}", options: getFromApi("commands")
+        input "deviceDelay${i}", "number", description: "Delay in seconds BEFORE command ${i} is executed", title: "Delay Command ${i}"        
     }
     
 }
 
-def getFromApi(item){
+private def getFromApi(item){
     def myOptions
 	def myPath = ""
     def myServer = ""
@@ -89,7 +78,6 @@ def getFromApi(item){
     if(item=="activities") myPath = "/hubs/${hub}/activities"
     if(item=="commands") myPath = "/hubs/${hub}/devices/${devices}/commands"
     if(item=="devices") myPath = "/hubs/${hub}/devices"
-    //log.info myPath
     def params = [
 		uri: myServer,
         path: myPath
@@ -98,17 +86,14 @@ def getFromApi(item){
 	try {
     	httpGet(params) { resp ->
         	resp.headers.each {
-        	//log.debug "${it.name} : ${it.value}"
     	}
-    	//log.debug "response contentType: ${resp.contentType}"
-    	//log.debug "response data: ${resp.data}"
        	if(item=="hub") myOptions = resp.data.hubs
         if(item=="activities") myOptions = resp.data.activities.slug
         if(item=="commands") myOptions = resp.data.commands.slug
         if(item=="devices") myOptions = resp.data.devices.slug
     	}
 	} catch (e) {
-		log.error "something went wrong: $e"
+		log.error "Check your Http Server Settings. Server returned: $e"
 	}
      return myOptions
 }
@@ -128,82 +113,68 @@ def updated() {
 
 def initialize() {
     log.debug "INITIALIZED with settings: ${settings}"
-    log.info "appLabel"+app.label
-    log.info "appName"+app.name
+    //log.info "appLabel"+app.label
+    //log.info "appName"+app.name
 	app.label==null?app.updateLabel(defaultLabel()):app.updateLabel(app.label)
     createVirtSwitch()
 }
 
-def createVirtSwitch() {
-	log.info "Creating Virtual Switch"
-    
+def createVirtSwitch() {    
     def childDevice = getChildDevices()?.find {it.device.deviceNetworkId == "HC_${app.id}"}      
-    //log.error childDevice
     if (!childDevice) {
+        log.info "Creating Virtual Switch"
         childDevice = addChildDevice("stephack", "HTTP Control Switch", "HC_${app.id}", null,[completedSetup: true,
         label: alexaName]) 
     	
         log.info "Created HTTP Switch [${childDevice}]"
 	}
     else {
+        log.info "Updating Virtual Switch"
     	childDevice.label = alexaName
         childDevice.name = alexaName
         log.info "Http Switch renamed to [${alexaName}]"
 	}
-
 }
 
 def defaultLabel() {
-	return alexaName+" ("+commandType+")"
+    return "${alexaName} (${commandType})"
 }
 
-
 def childOn(){
- 	log.debug "childOn: "+commandType
+    log.debug "childOn: ${commandType}"
     if(commandType == "Activity Control") runActivity()
-    if(commandType == "Device Command Sequence") runSequence()
-    if(commandType == "URL Path") runHttp(devicePath, deviceMethod)
-    
+    if(commandType == "Device Commands") runSequence()
 }
 
 def childOff(){
- 	log.debug "childOff: "+commandType
+ 	log.debug "childOff: ${commandType}"
     if(commandType == "Activity Control") runActivityOff()
-    if(commandType == "Device Command Sequence") log.debug "off does nothing"
-    if(commandType == "URL Path") log.debug "off does nothing"
+    if(commandType == "Device Commands") log.info "Request ignored. Device Commands does not respond to off()."
 }
 
 
 def runActivity(){
-	log.info "activity on"
     def path = "/hubs/"+hub+"/activities/"+activities
-    log.info path
     runHttp(path, "POST") 
 }
 
 def runActivityOff() {
-	log.info "activity off"
     def path = "/hubs/"+hub+"/off"
-    log.info path
     runHttp(path, "PUT") 
 }
 
 def runSequence(){
-    log.info "sequence"
+    log.info "Command Sequence Started"
     def nextDelay = 0
     for(i in 1..numOfComms){
     	nextDelay = nextDelay + settings["deviceDelay${i}"]
-        log.error nextDelay
         runIn(nextDelay,"runCommand",[overwrite: false, data: i])
     }
 }
 
-
-
 def runCommand(data) {
-    log.info data
+    log.info "Executing command ${data}"
     def path = "/hubs/"+hub+"/devices/"+devices+"/commands/"+settings["deviceCommand${data}"]
-    log.info path
     runHttp(path, "POST")   
 }
 
@@ -221,18 +192,10 @@ def runHttp(varCommand,method){
 			body: body,
 			headers: headers
 			)
-		log.debug hubAction
+        log.debug "Method = ${method}, Path = ${varCommand}"
 		sendHubCommand(hubAction)
 	}
 	catch (Exception e) {
-        log.debug "runCmd hit exception ${e} on ${hubAction}"
+        log.debug "runHttp hit exception ${e} on ${hubAction}"
 	}  
-}
-
-private def textHelp() {
-	def text =
-	section("User's Guide - Harmony Commander") {
-    	paragraph ""
-   	}
-	
 }
