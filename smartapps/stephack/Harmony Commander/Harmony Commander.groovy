@@ -1,7 +1,7 @@
 /*
  *	Harmony Commander
  *
- *	Author: Stephan Hackett, Daniel Ogorchock
+ *	Author: Stephan Hackett
  * 
  *
  * 
@@ -11,7 +11,7 @@ definition(
     name: "Harmony Commander",
     namespace: "stephack",
     singleInstance: true,
-    author: "Stephan Hackett, Daniel Ogorchock",
+    author: "Stephan Hackett",
     description: "Send Commands to Harmony Hub",
     category: "My Apps",
     iconUrl: "",
