@@ -9,18 +9,21 @@
 metadata {
 	definition (name: "HTTP Control Switch", namespace: "stephack", author: "Stephan Hackett") {
         capability "Switch"
+        capability "Momentary"
 	}
-
 	preferences {
 	}
 }
 
-def parse(String description) {
-	log.debug(description)
+def push() {
+    sendEvent(name: "switch", value: "on")
+    sendEvent(name: "switch", value: "off")
+    parent.childOn()
 }
 
 def on() {
-    parent.childOn()
+    
+    push()
 }
 
 def off() {
