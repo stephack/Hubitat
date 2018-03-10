@@ -32,6 +32,12 @@
  *   Double-Tap Up     1        pressed
  *   Double-Tap Down   2        pressed
  *
+ *	Edits by Stephan Hackett
+ *	- removed unneeded tiles and simulator sections
+ *	- switchMultiLevel V3 changed to V2 (hubitat compatible)
+ *	- changed button push code to be hubitat compliant
+ *	- replaced physicalgraph with hubitat
+ *
  */
 metadata {
 	definition (name: "GE/Jasco Z-Wave Plus Dimmer Switch", namespace: "nuttytree", author: "Chris Nussbaum") {
@@ -76,24 +82,6 @@ metadata {
         fingerprint mfr:"0063", prod:"4944", model:"3137", ver: "5.20", deviceJoinName: "Jasco Z-Wave Plus Toggle Dimmer"
 	}
 
-
-	simulator {
-		status "on":  "command: 2003, payload: FF"
-		status "off": "command: 2003, payload: 00"
-		status "09%": "command: 2003, payload: 09"
-		status "10%": "command: 2003, payload: 0A"
-		status "33%": "command: 2003, payload: 21"
-		status "66%": "command: 2003, payload: 42"
-		status "99%": "command: 2003, payload: 63"
-
-		// reply messages
-		reply "2001FF,delay 5000,2602": "command: 2603, payload: FF"
-		reply "200100,delay 5000,2602": "command: 2603, payload: 00"
-		reply "200119,delay 5000,2602": "command: 2603, payload: 19"
-		reply "200132,delay 5000,2602": "command: 2603, payload: 32"
-		reply "20014B,delay 5000,2602": "command: 2603, payload: 4B"
-		reply "200163,delay 5000,2602": "command: 2603, payload: 63"
-	}
     
     preferences {
         input (
@@ -120,104 +108,14 @@ metadata {
         )
     }
 
-	tiles(scale:2) {
-		multiAttributeTile(name:"switch", type: "lighting", width: 6, height: 4, canChangeIcon: true){
-			tileAttribute ("device.switch", key: "PRIMARY_CONTROL") {
-				attributeState "on", label: '${name}', action: "switch.off", icon: "https://raw.githubusercontent.com/nuttytree/Nutty-SmartThings/master/devicetypes/nuttytree/SwitchOnIcon.png", backgroundColor: "#00a0dc", nextState:"turningOff"
-				attributeState "off", label: '${name}', action: "switch.on", icon: "https://raw.githubusercontent.com/nuttytree/Nutty-SmartThings/master/devicetypes/nuttytree/SwitchOffIcon.png", backgroundColor: "#ffffff", nextState:"turningOn"
-				attributeState "turningOn", label:"Turning On", action:"switch.off", icon:"https://raw.githubusercontent.com/nuttytree/Nutty-SmartThings/master/devicetypes/nuttytree/SwitchOnIcon.png", backgroundColor:"#00a0dc", nextState:"turningOff"
-				attributeState "turningOff", label:"Turning Off", action:"switch.on", icon:"https://raw.githubusercontent.com/nuttytree/Nutty-SmartThings/master/devicetypes/nuttytree/SwitchOffIcon.png", backgroundColor:"#ffffff", nextState:"turningOn"
-			}
-			tileAttribute ("device.level", key: "VALUE_CONTROL") {
-				attributeState "VALUE_UP", action:"levelUp"
-				attributeState "VALUE_DOWN", action:"levelDown"
-			}
-			tileAttribute ("device.level", key: "SLIDER_CONTROL") {
-				attributeState "level", action:"switch level.setLevel"
-			}
-		}
-        
-        standardTile("doubleUp", "device.button", width: 3, height: 2, decoration: "flat") {
-			state "default", label: "Tap ▲▲", backgroundColor: "#ffffff", action: "doubleUp", icon: "https://raw.githubusercontent.com/nuttytree/Nutty-SmartThings/master/devicetypes/nuttytree/SwitchOnIcon.png"
-		}     
- 
-        standardTile("doubleDown", "device.button", width: 3, height: 2, decoration: "flat") {
-			state "default", label: "Tap ▼▼", backgroundColor: "#ffffff", action: "doubleDown", icon: "https://raw.githubusercontent.com/nuttytree/Nutty-SmartThings/master/devicetypes/nuttytree/SwitchOffIcon.png"
-		} 
-
-		standardTile("indicator", "device.indicatorStatus", width: 2, height: 2, inactiveLabel: false, decoration: "flat") {
-			state "when off", action:"indicator.indicatorWhenOn", icon:"st.indicators.lit-when-off"
-			state "when on", action:"indicator.indicatorNever", icon:"st.indicators.lit-when-on"
-			state "never", action:"indicator.indicatorWhenOff", icon:"st.indicators.never-lit"
-		}
-        
-		standardTile("inverted", "device.inverted", width: 2, height: 2, inactiveLabel: false, decoration: "flat") {
-			state "not inverted", label: "Not Inverted", action:"inverted", icon:"https://raw.githubusercontent.com/nuttytree/Nutty-SmartThings/master/devicetypes/nuttytree/SwitchNotInverted.png", backgroundColor: "#ffffff"
-			state "inverted", label: "Inverted", action:"notInverted", icon:"https://raw.githubusercontent.com/nuttytree/Nutty-SmartThings/master/devicetypes/nuttytree/SwitchInverted.png", backgroundColor: "#ffffff"
-		}
-
-		standardTile("refresh", "device.switch", width: 2, height: 2, inactiveLabel: false, decoration: "flat") {
-			state "default", label:'', action:"refresh.refresh", icon:"st.secondary.refresh"
-		}
-
-		standardTile("zwaveStepsLabel", "device.zwaveSteps",  width: 2, height: 1, inactiveLabel: false) {
-        	state "default", label:'Z-Wave Dim Steps: ${currentValue}'
-        }
-        controlTile("zwaveSteps", "device.zwaveSteps", "slider", width: 4, height: 1, range:"(1..99)", inactiveLabel: false) {
-			state "default", action:"setZwaveSteps"
-		}
-
-		standardTile("zwaveDelayLabel", "device.zwaveDelay",  width: 2, height: 1, inactiveLabel: false) {
-        	state "default", label:'Z-Wave Dim Delay: ${currentValue}0ms'
-        }
-        controlTile("zwaveDelay", "device.zwaveDelay", "slider", width: 4, height: 1, range:"(1..255)", inactiveLabel: false) {
-			state "default", action:"setZwaveDelay"
-		}
-
-		standardTile("manualStepsLabel", "device.manualSteps",  width: 2, height: 1, inactiveLabel: false) {
-        	state "default", label:'Manual Dim Steps: ${currentValue}'
-        }
-        controlTile("manualSteps", "device.manualSteps", "slider", width: 4, height: 1, range:"(1..99)", inactiveLabel: false) {
-			state "default", action:"setManualSteps"
-		}
-
-		standardTile("manualDelayLabel", "device.manualDelay",  width: 2, height: 1, inactiveLabel: false) {
-        	state "default", label:'Manual Dim Delay: ${currentValue}0ms'
-        }
-        controlTile("manualDelay", "device.manualDelay", "slider", width: 4, height: 1, range:"(1..255)", inactiveLabel: false) {
-			state "default", action:"setManualDelay"
-		}
-
-		standardTile("allStepsLabel", "device.allSteps",  width: 2, height: 1, inactiveLabel: false) {
-        	state "default", label:'All On/Off Dim Steps: ${currentValue}'
-        }
-        controlTile("allSteps", "device.allSteps", "slider", width: 4, height: 1, range:"(1..99)", inactiveLabel: false) {
-			state "default", action:"setAllSteps"
-		}
-
-		standardTile("allDelayLabel", "device.allDelay",  width: 2, height: 1, inactiveLabel: false) {
-        	state "default", label:'All On/Off Dim Delay: ${currentValue}0ms'
-        }
-        controlTile("allDelay", "device.allDelay", "slider", width: 4, height: 1, range:"(1..255)", inactiveLabel: false) {
-			state "default", action:"setAllDelay"
-		}
-
-		main "switch"
-        details(["switch", "doubleUp", "doubleDown",
-        		 "indicator", "inverted", "refresh",
-                 "zwaveStepsLabel", "zwaveSteps", "zwaveDelayLabel", "zwaveDelay",
-                 "manualStepsLabel", "manualSteps", "manualDelayLabel", "manualDelay",
-                 "allStepsLabel", "allSteps", "allDelayLabel", "allDelay"])
-	}
 }
 
 // parse events into attributes
 def parse(String description) {
     log.debug "description: $description"
     def result = null
-    def cmd = zwave.parse(description, [0x20: 1, 0x25: 1, 0x26: 3, 0x56: 1, 0x70: 2, 0x72: 2, 0x85: 2])
+    def cmd = zwave.parse(description, [0x20: 1, 0x25: 1, 0x26: 2, 0x56: 1, 0x70: 2, 0x72: 2, 0x85: 2])
     if (cmd) {
-        log.info cmd
         result = zwaveEvent(cmd)
         log.debug "Parsed ${cmd} to ${result.inspect()}"
     } else {
@@ -238,22 +136,18 @@ def zwaveEvent(hubitat.zwave.commands.crc16encapv1.Crc16Encap cmd) {
 }
 
 def zwaveEvent(hubitat.zwave.commands.basicv1.BasicReport cmd) {
-    log.info "test1"
 	dimmerEvents(cmd)
 }
 
-def zwaveEvent(hubitat.zwave.commands.switchmultilevelv3.SwitchMultilevelReport cmd) {
-    log.info "test2"
+def zwaveEvent(hubitat.zwave.commands.switchmultilevelv2.SwitchMultilevelReport cmd) {
 	dimmerEvents(cmd)
 }
 
-def zwaveEvent(hubitat.zwave.commands.switchmultilevelv3.SwitchMultilevelSet cmd) {
-    log.info "test3"
+def zwaveEvent(hubitat.zwave.commands.switchmultilevelv2.SwitchMultilevelSet cmd) {
 	dimmerEvents(cmd)
 }
 
 private dimmerEvents(hubitat.zwave.Command cmd) {
-    //log.info cmd
 	def value = (cmd.value ? "on" : "off")
 	def result = [createEvent(name: "switch", value: value, type: "physical")]
 	if (cmd.value && cmd.value <= 100) {
