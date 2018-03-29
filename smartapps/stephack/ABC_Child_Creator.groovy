@@ -23,7 +23,7 @@
  *		Switched to parent/child config	
  *		removed button pics and descriptive text (not utilized by hubitat)
  */
-def version(){"v0.2.180213"}
+def version(){"v0.2.180328"}
 
 definition(
     name: "ABC Button Mapping",
@@ -96,11 +96,13 @@ def configButtonsPage(params) {
 def getButtonSections(buttonNumber) {
 	return {    	
         def myDetail
-        for(i in 1..17) {//Build 1st 17 Button Config Options
+        for(i in 1..19) {//Build 1st 19 Button Config Options
         	myDetail = getPrefDetails().find{it.sOrder==i}
         	section(myDetail.secLabel, hideable: true, hidden: !(shallHide("${myDetail.id}${buttonNumber}") || shallHide("${myDetail.sub}${buttonNumber}"))) {
 				input "${myDetail.id}${buttonNumber}_pushed", myDetail.cap, title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
 				if(myDetail.sub && isReq("${myDetail.id}${buttonNumber}_pushed")) input "${myDetail.sub}${buttonNumber}_pushed", "number", title: myDetail.sTitle, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_pushed"), description: myDetail.sDesc
+                if(myDetail.sub2 && isReq("${myDetail.id}${buttonNumber}_pushed")) input "${myDetail.sub2}${buttonNumber}_pushed", "number", title: myDetail.s2Title, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_pushed"), description: myDetail.s2Desc
+                //if(myDetail.sub3 && isReq("${myDetail.id}${buttonNumber}_pushed")) input "${myDetail.sub3}${buttonNumber}_pushed", "number", title: myDetail.s3Title, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_pushed"), description: myDetail.s3Desc
 				//if(showHeld()) input "${myDetail.id}${buttonNumber}_held", myDetail.cap, title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
 				input "${myDetail.id}${buttonNumber}_held", myDetail.cap, title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
                 if(myDetail.sub && isReq("${myDetail.id}${buttonNumber}_held")) input "${myDetail.sub}${buttonNumber}_held", "number", title: myDetail.sTitle, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_held"), description: myDetail.sDesc
@@ -108,8 +110,17 @@ def getButtonSections(buttonNumber) {
                 if(myDetail.sub && isReq("${myDetail.id}${buttonNumber}_doubleTapped")) input "${myDetail.sub}${buttonNumber}_doubleTapped", "number", title: myDetail.sTitle, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_held"), description: myDetail.sDesc
                 
 			}
-        	if(i==3 || i==8 || i==13 || i==17) section(" "){}
-        }        
+        	if(i==5 || i==10 || i==15 || i==19) section(" "){}
+        }
+        /*
+        section("Custom Command", hideable: true, hidden: !shallHide("ccDevice_${buttonNumber}")) {
+			input "ccDevice_${buttonNumber}_pushed", "capability.switch", title: "When Pushed", required: false, submitOnChange: collapseAll
+          //  input "ccCommand_${buttonNumber}_pushed", getDevCommands(), title: "Command", required: false, submitOnChange: collapseAll
+			input "ccDevice_${buttonNumber}_held", "capability.switch", title: "When Held", required: false, submitOnChange: collapseAll
+            input "ccCommand_${buttonNumber}_held", "device.command", title: "Command", required: false, submitOnChange: collapseAll
+            //if(showDouble()) input "ccDevice_${buttonNumber}_doubleTapped", "capability.switch", title: "When Double Tapped", required: false, submitOnChange: collapseAll
+		}
+		*/
 		section("Set Mode", hideable: true, hidden: !shallHide("mode_${buttonNumber}")) {
 			input "mode_${buttonNumber}_pushed", "mode", title: "When Pushed", required: false, submitOnChange: collapseAll
 			input "mode_${buttonNumber}_held", "mode", title: "When Held", required: false, submitOnChange: collapseAll
@@ -141,6 +152,13 @@ def getButtonSections(buttonNumber) {
             }
 		}        
 	}
+}
+
+def getDevCommands(){
+    def options = []
+    options =  lightOn_1_pushed.capabilities.commands//capabilities
+    
+    log.error options
 }
 
 def shallHide(myFeature) {
@@ -184,7 +202,9 @@ def getDescDetails(bNum, type){
     	preferenceNames.each {eachPref->
         	def prefDetail = getPrefDetails().find{eachPref.key.contains(it.id)}	//gets decription of action being performed(eg Turn On)
         	def prefDevice = " : ${eachPref.value}" - "[" - "]"											//name of device the action is being performed on (eg Bedroom Fan)
-            	def prefSubValue = settings[prefDetail.sub + numType]?:"(!Missing!)"
+            def prefSubValue = settings[prefDetail.sub + numType]?:"(!Missing!)"
+            def sub2Value = settings[prefDetail.sub2 + numType]
+            if(sub2Value) prefSubValue += ", S: ${sub2Value})"
             	if(prefDetail.type=="normal") formattedPage += "\n- ${prefDetail.desc}${prefDevice}"
             	if(prefDetail.type=="hasSub") formattedPage += "\n- ${prefDetail.desc}${prefSubValue}${prefDevice}"
             	if(prefDetail.type=="bool") formattedPage += "\n- ${prefDetail.desc}"
@@ -218,22 +238,25 @@ def defaultLabel() {
 def getPrefDetails(){
 	def detailMappings =
     	[[id:'lightOn_', sOrder:1, desc:'Turn On ', comm:turnOn, type:"normal", secLabel: "Switches (Turn On)", cap: "capability.switch"],
-         [id:'lights_', sOrder:3, desc:'Toggle On/Off', comm:toggle, type:"normal", secLabel: "Switches (Toggle On/Off)", cap: "capability.switch"],
      	 [id:"lightOff_", sOrder:2, desc:'Turn Off', comm:turnOff, type:"normal", secLabel: "Switches (Turn Off)", cap: "capability.switch"],
-     	 [id:"lightDim_", sOrder:4, desc:'Dim to ', comm:turnDim, sub:"valLight", type:"hasSub", secLabel: "Dimmers (On to Level - Group 1)", cap: "capability.switchLevel", sTitle: "Bright Level", sDesc:"0 to 100%"],
-     	 [id:"lightD2m_", sOrder:5, desc:'Dim to ', comm:turnDim, sub:"valLight2", type:"hasSub", secLabel: "Dimmers (On to Level - Group 2)", cap: "capability.switchLevel", sTitle: "Bright Level", sDesc:"0 to 100%"],
-         [id:'dimPlus_', sOrder:6, desc:'Brightness +', comm:levelUp, sub:"valDimP", type:"hasSub", secLabel: "Dimmers (Increase Level By)", cap: "capability.switchLevel", sTitle: "Increase by", sDesc:"0 to 15"],
-     	 [id:'dimMinus_', sOrder:7, desc:'Brightness -', comm:levelDown, sub:"valDimM", type:"hasSub", secLabel: "Dimmers (Decrease Level By)", cap: "capability.switchLevel", sTitle: "Decrease by", sDesc:"0 to 15"],
-         [id:'lightsDT_', sOrder:8, desc:'Toggle Off/Dim to ', comm:dimToggle, sub:"valDT", type:"hasSub", secLabel: "Dimmers (Toggle OnToLevel/Off)", cap: "capability.switchLevel", sTitle: "Bright Level", sDesc:"0 to 100%"],
-         [id:"speakerpp_", sOrder:9, desc:'Toggle Play/Pause', comm:speakerplaystate, type:"normal", secLabel: "Speakers (Toggle Play/Pause)", cap: "capability.musicPlayer"],
-     	 [id:'speakervu_', sOrder:10, desc:'Volume +', comm:levelUp, sub:"valSpeakU", type:"hasSub", secLabel: "Speakers (Increase Vol By)", cap: "capability.musicPlayer", sTitle: "Increase by", sDesc:"0 to 15"],
-     	 [id:"speakervd_", sOrder:11, desc:'Volume -', comm:levelDown, sub:"valSpeakD", type:"hasSub", secLabel: "Speakers (Decrease Vol By)", cap: "capability.musicPlayer", sTitle: "Decrease by", sDesc:"0 to 15"],
-         [id:'speakernt_', sOrder:12, desc:'Next Track', comm:speakernexttrack, type:"normal", secLabel: "Speakers (Go to Next Track)", cap: "capability.musicPlayer"],
-    	 [id:'speakermu_', sOrder:13, desc:'Mute', comm:speakermute, type:"normal", secLabel: "Speakers (Toggle Mute/Unmute)", cap: "capability.musicPlayer"],
-         [id:'sirens_', sOrder:14, desc:'Toggle', comm:toggle, type:"normal", secLabel: "Sirens (Toggle)", cap: "capability.alarm"],
-     	 [id:"locks_", sOrder:15, desc:'Lock', comm:setUnlock, type:"normal", secLabel: "Locks (Lock Only)", cap: "capability.lock"],
-     	 [id:"fanAdjust_", sOrder:16,desc:'Adjust', comm:adjustFan, type:"normal", secLabel: "Fans (Adjust - Low, Medium, High, Off)", cap: "capability.switchLevel"],
-     	 [id:"shadeAdjust_", sOrder:17,desc:'Adjust', comm:adjustShade, type:"normal", secLabel: "Shades (Adjust - Up, Down, or Stop)", cap: "capability.doorControl"],
+         [id:'lights_', sOrder:3, desc:'Toggle On/Off', comm:toggle, type:"normal", secLabel: "Switches (Toggle On/Off)", cap: "capability.switch"],
+         [id:'lightColorTemp_', sOrder:4, desc:'Set Light Color Temp to ', comm:colorSetT, sub:"valColorTemp", type:"hasSub", secLabel: "Switches (Set Color Temp To)", cap: "capability.colorTemperature", sTitle: "Color Temp", sDesc:"2000 to 9000"],
+         [id:'lightColor_', sOrder:5, desc:'Set Light Color (H:', comm:colorSet, sub:"valHue", sub2:"valSat", sub3:"valColor", type:"hasSub", secLabel: "Switches (Set Color To)", cap: "capability.colorControl", sTitle: "Hue", s2Title: "Saturation", s3Title: "Color", sDesc:"0 to 100", s2Desc:"0 to 100", s3Desc:"ColorMap"],
+     	 [id:"lightDim_", sOrder:6, desc:'Dim to ', comm:turnDim, sub:"valLight", type:"hasSub", secLabel: "Dimmers (On to Level - Group 1)", cap: "capability.switchLevel", sTitle: "Bright Level", sDesc:"0 to 100%"],
+     	 [id:"lightD2m_", sOrder:7, desc:'Dim to ', comm:turnDim, sub:"valLight2", type:"hasSub", secLabel: "Dimmers (On to Level - Group 2)", cap: "capability.switchLevel", sTitle: "Bright Level", sDesc:"0 to 100%"],
+         [id:'dimPlus_', sOrder:8, desc:'Brightness +', comm:levelUp, sub:"valDimP", type:"hasSub", secLabel: "Dimmers (Increase Level By)", cap: "capability.switchLevel", sTitle: "Increase by", sDesc:"0 to 15"],
+     	 [id:'dimMinus_', sOrder:9, desc:'Brightness -', comm:levelDown, sub:"valDimM", type:"hasSub", secLabel: "Dimmers (Decrease Level By)", cap: "capability.switchLevel", sTitle: "Decrease by", sDesc:"0 to 15"],
+         [id:'lightsDT_', sOrder:10, desc:'Toggle Off/Dim to ', comm:dimToggle, sub:"valDT", type:"hasSub", secLabel: "Dimmers (Toggle OnToLevel/Off)", cap: "capability.switchLevel", sTitle: "Bright Level", sDesc:"0 to 100%"],
+         [id:"speakerpp_", sOrder:11, desc:'Toggle Play/Pause', comm:speakerplaystate, type:"normal", secLabel: "Speakers (Toggle Play/Pause)", cap: "capability.musicPlayer"],
+     	 [id:'speakervu_', sOrder:12, desc:'Volume +', comm:levelUp, sub:"valSpeakU", type:"hasSub", secLabel: "Speakers (Increase Vol By)", cap: "capability.musicPlayer", sTitle: "Increase by", sDesc:"0 to 15"],
+     	 [id:"speakervd_", sOrder:13, desc:'Volume -', comm:levelDown, sub:"valSpeakD", type:"hasSub", secLabel: "Speakers (Decrease Vol By)", cap: "capability.musicPlayer", sTitle: "Decrease by", sDesc:"0 to 15"],
+         [id:'speakernt_', sOrder:14, desc:'Next Track', comm:speakernexttrack, type:"normal", secLabel: "Speakers (Go to Next Track)", cap: "capability.musicPlayer"],
+    	 [id:'speakermu_', sOrder:15, desc:'Mute', comm:speakermute, type:"normal", secLabel: "Speakers (Toggle Mute/Unmute)", cap: "capability.musicPlayer"],
+         [id:'sirens_', sOrder:16, desc:'Toggle', comm:toggle, type:"normal", secLabel: "Sirens (Toggle)", cap: "capability.alarm"],
+     	 [id:"locks_", sOrder:17, desc:'Lock', comm:setUnlock, type:"normal", secLabel: "Locks (Lock Only)", cap: "capability.lock"],
+     	 [id:"fanAdjust_", sOrder:18,desc:'Adjust', comm:adjustFan, type:"normal", secLabel: "Fans (Adjust - Low, Medium, High, Off)", cap: "capability.switchLevel"],
+     	 [id:"shadeAdjust_", sOrder:19,desc:'Adjust', comm:adjustShade, type:"normal", secLabel: "Shades (Adjust - Up, Down, or Stop)", cap: "capability.doorControl"],
+     	// [id:"ccDev_", sOrder:20, desc:'Device to CC ', comm:runCC, sub:"ccCommand", type:"hasSub", secLabel: "Device to run CC on", cap: "capability.switch", sTitle: "Command", sDesc:"0 to 100%"],
      	 [id:"mode_", desc:'Set Mode', comm:changeMode, type:"normal"],
      	 [id:"phrase_", desc:'Run Routine', comm:runRout, type:"normal"],
 		 [id:"notifications_", desc:'Send Push Notification', comm:messageHandle, sub:"valNotify", type:"bool"],
@@ -251,8 +274,13 @@ def buttonEvent(evt) {
     	def preferenceNames = settings.findAll{it.key.contains("_${buttonNumber}_${pressType}")}
     	preferenceNames.each{eachPref->
         	def prefDetail = getPrefDetails()?.find{eachPref.key.contains(it.id)}		//returns the detail map of id,desc,comm,sub
-        	def PrefSubValue = settings["${prefDetail.sub}${buttonNumber}_${pressType}"]	//value of subsetting (eg 100)
-        	if(prefDetail.sub) "$prefDetail.comm"(eachPref.value,PrefSubValue)
+        	def PrefSubValue = settings["${prefDetail.sub}${buttonNumber}_${pressType}"] //value of subsetting (eg 100)
+            def PrefSub2Value = settings["${prefDetail.sub2}${buttonNumber}_${pressType}"] //value of subsetting (eg 100)
+            //def PrefSub3Value = settings["${prefDetail.sub3}${buttonNumber}_${pressType}"]	//value of subsetting (eg 100)
+        	//if(prefDetail.sub3) "$prefDetail.comm"(eachPref.value,PrefSubValue, PrefSub2Value, PrefSub3Value)
+            if(prefDetail.sub2) "$prefDetail.comm"(eachPref.value,PrefSubValue, PrefSub2Value)
+        	else if(prefDetail.sub) "$prefDetail.comm"(eachPref.value,PrefSubValue)
+        	
         	else "$prefDetail.comm"(eachPref.value)
     	}
 	}
@@ -271,6 +299,18 @@ def turnOff(devices) {
 def turnDim(devices, level) {
 	log.debug "Dimming (to $level): $devices"
 	devices.setLevel(level)
+}
+
+def colorSet(devices,hueVal,satVal) {
+    log.debug "Setting Color (to H:$hueVal, S:$satVal): $devices"
+    //devices.setColor(hue:hueVal,saturation:satVal) 
+    devices.setHue(hueVal)
+    devices.setSaturation(satVal)
+}
+
+def colorSetT(devices, temp) {
+    log.debug "Setting Color Temp (to $temp): $devices"
+    devices.setColorTemperature(temp)    
 }
 
 def adjustFan(device) {
