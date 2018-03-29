@@ -325,9 +325,9 @@ def setColorTemperature(value) {
 }
 
 def setHue(val) {
-	log("Begin setting groups hue to ${val}.", "DEBUG")
+	log("Begin setting groups hue to ${val} (converted for Lifx to ${val * 3.6}).", "DEBUG")
     
-    sendLIFXCommand([color: "hue:${val}"])
+    sendLIFXCommand([color: "hue:${val * 3.6}"])
     
     sendEvent(name: "hue", value: val, displayed: getUseActivityLogDebug())
     sendEvent(name: "switch", value: "on", displayed: getUseActivityLogDebug())
@@ -335,9 +335,9 @@ def setHue(val) {
 }
 
 def setSaturation(val) {
-	log("Begin setting groups saturation to ${val}.", "DEBUG")
+    log("Begin setting groups saturation to ${val} (converted for Lifx to ${val /100}).", "DEBUG")
     
-    sendLIFXCommand([color: "saturation:${val}"])
+    sendLIFXCommand([color: "saturation:${val / 100}"])
     
     sendEvent(name: "saturation", value: val, displayed: getUseActivityLogDebug())
     sendEvent(name: "switch", value: "on", displayed: getUseActivityLogDebug())
@@ -699,8 +699,8 @@ def sendLIFXInquiry() {
                 	}
                     else {
                     	log("Saturation is > 0.0, setting color.", "TRACE")
-                    	def h = df.format(it.color.hue)
-                    	def s = df.format(it.color.saturation)
+                    	def h = df.format(it.color.hue / 3.6)
+                    	def s = df.format(it.color.saturation * 100)
                     	def b = df0.format(it.brightness * 100)
 
                     	log("h = ${h}, s = ${s}, b = ${b}.", "TRACE")
