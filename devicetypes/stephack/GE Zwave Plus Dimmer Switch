@@ -14,6 +14,8 @@
  *  Copyright 2018 Stephan Hackett
  *
  */
+def version() {"v1.0.20180413"}
+
 metadata {
 	definition (name: "GE Zwave Plus Dimmer Switch", namespace: "stephack", author: "Stephan Hackett and Chris Nussbaum") {
 		capability "Switch"
@@ -200,4 +202,16 @@ def setLevel(value, duration) {
         zwave.switchMultilevelV2.switchMultilevelSet(value: level, dimmingDuration: dimmingDuration).format(),
 		zwave.switchMultilevelV1.switchMultilevelGet().format()
     ], getStatusDelay.toInteger())
+}
+
+def installed() {
+ 	initialize()
+}
+
+def updated() {
+ 	initialize()
+}
+
+def initialize() {
+    state.version = version()
 }
