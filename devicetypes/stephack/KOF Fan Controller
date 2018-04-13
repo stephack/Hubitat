@@ -20,6 +20,7 @@
  *	2/12/18 - added "Fan Control" capability and replaced setFanSpeed with built in setSpeed
  *
  */
+def version() {"v1.0.20180405"}
 
 metadata {
     definition (name: "Hampton Bay Zigbee Fan Controller", namespace: "stephack", author: "Stephan Hackett") {
@@ -78,6 +79,18 @@ def parse(String description) {
         log.debug "Parse returned $map"
 		return result
    	}
+}
+
+def installed() {
+ 	initialize()
+}
+
+def updated() {
+ 	initialize()
+}
+
+def initialize() {
+    state.version = version()
 }
 
 def getFanName() {
