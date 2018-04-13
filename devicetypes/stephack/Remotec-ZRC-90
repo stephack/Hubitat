@@ -26,6 +26,8 @@
  * 02/12/18 - added methods for push(), hold(), doubleTap() - allows execution via device page
  *
  */
+def version() {"v1.0.20180413"}
+
 metadata {
 	definition (name: "Remotec ZRC-90 Scene Master", namespace: "stephack", author: "Stephan Hackett") {
 		capability "Actuator"
@@ -143,6 +145,7 @@ def configure() {
     sendEvent(name: "checkInterval", value: 2 * 60 * 12 * 60 + 5 * 60, displayed: false, data: [protocol: "zwave", hubHardwareId: device.hub.hardwareID])
     sendEvent(name: "numberOfButtons", value: 8, displayed: true)
     state.isConfigured = "true"
+    state.version = version()
 }
 
 def ping() {
