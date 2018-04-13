@@ -20,7 +20,7 @@
  *	2/12/18 - added "Fan Control" capability and replaced setFanSpeed with built in setSpeed
  *
  */
-def version() {"v1.0.20180405"}
+def version() {"v1.0.20180413"}
 
 metadata {
     definition (name: "Hampton Bay Zigbee Fan Controller", namespace: "stephack", author: "Stephan Hackett") {
