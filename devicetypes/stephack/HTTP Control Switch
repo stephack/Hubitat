@@ -6,6 +6,9 @@
  *
  * 
  */
+
+def version() {"v1.0.20180413"}
+
 metadata {
 	definition (name: "HTTP Control Switch", namespace: "stephack", author: "Stephan Hackett") {
         capability "Switch"
@@ -16,13 +19,17 @@ metadata {
 }
 
 def push() {
-    sendEvent(name: "switch", value: "on")
-    sendEvent(name: "switch", value: "off")
     parent.childOn()
+    runIn(1,togMom)
+    sendEvent(name: "switch", value: "on")
 }
 
-def on() {
+def togMom() {
+    sendEvent(name: "switch", value: "off")
+}
+
     
+def on() {
     push()
 }
 
@@ -31,4 +38,14 @@ def off() {
 }
 
 
-def installed(){}
+def installed() {
+ 	initialize()
+}
+
+def updated() {
+ 	initialize()
+}
+
+def initialize() {
+    state.version = version()
+}
