@@ -13,17 +13,19 @@
 *
 *
 */
-def version() {"v1.0.20180405"}
+def version() {"v1.0.20180415"}
 
 preferences {
     input("myServer", "text", title: "Sonos Api Server:", description: "", submitOnChange: true)
   	input("myPort", "number", title: "Server Port:", description: "", submitOnChange: true)
-  	input("mySpeaker", "enum", title: "Choose Sonos Speaker:", description: "", multiple: false, required: false, options: apiGet("sList"))
-    input("numFavs", "number", title: "How many Favorites to save?", required: false, submitOnChange: true)
-    if(numFavs){
-    	for(i in 1..numFavs){
-            input("myFavorites${i}", "enum", title: "Choose Favorites #${i}:", description: "", required: false, options: apiGet("sFavorites"))		
-		}
+    if(myServer && myPort){
+    	input("mySpeaker", "enum", title: "Choose Sonos Speaker:", description: "", multiple: false, required: false, options: apiGet("sList"))
+    	input("numFavs", "number", title: "How many Favorites to save?", required: false, submitOnChange: true)
+    	if(numFavs){
+    		for(i in 1..numFavs){
+            	input("myFavorites${i}", "enum", title: "Choose Favorites #${i}:", description: "", required: false, options: apiGet("sFavorites"))		
+			}
+    	}
     }
 }
 
@@ -132,8 +134,8 @@ def setTrack(track){
 }
 
 def playTrack(track){
-    apiGet("${mySpeaker}/playlist/${track}")
-    runIn(1,refresh)
+  //  apiGet("${mySpeaker}/playlist/${track}")
+  //  runIn(1,refresh)
 }
 
 /////////////////////////////////////////  SOUND   //////////////
