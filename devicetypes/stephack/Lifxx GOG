@@ -3,6 +3,9 @@
  *
  *  Copyright 2016 ericvitale@gmail.com
  *
+ *	
+ *
+ *
  *	Hubitat Version - edited by Stephan Hackett (3/25/18)
  *	- async to sync (redid all httpPost/Put/Get and handlers
  *	- map had to be rebuilt when received by sendLIFXCommand() method
@@ -11,6 +14,9 @@
  *	- removed unneeded tile info
  *	- replaced runEvery1Minute with schedule(cron)
  *	- added versioning
+ *
+ *	4/15/18
+ *	- edited Api Effects, setTemp and setLevel methods to adjsut for recent firmware changes
  *
  *
  *  Version 1.3.6 - Added more activity feed filtering. (10/9/2017) 
@@ -57,7 +63,7 @@
  
 //include 'asynchttp_v1'
 
-def version(){return "v1.0.20180325"}
+def version(){return "v1.0.20180415"}
 
 import java.text.DecimalFormat;
 
@@ -270,7 +276,7 @@ def transitionLevel(value, duration=getDefaultTransitionDuration()) {
 }
 
 def setLevel(level, duration=getDefaultTransitionDuration()) {
-	log("Begin setting groups level to ${value} over ${duration} seconds.", "DEBUG")
+	log("Begin setting groups level to ${level} over ${duration} seconds.", "DEBUG")
     
     if (level > 100) {
 		level = 100
@@ -307,7 +313,7 @@ def setColor(value) {
 
 def setColorTemperature(value) {
 	log("Begin setting groups color temperature to ${value}.", "DEBUG")
-    value = value.toInteger()
+    //value = value.toInteger()
     log.info value
     
     if(value < 2500) {
@@ -316,7 +322,7 @@ def setColorTemperature(value) {
     	value = 9000
     }
     
-    sendLIFXCommand([color:"kelvin:${value} saturation:0"])
+    sendLIFXCommand([color: "kelvin:${value} saturation:0"])
             
 	sendEvent(name: "colorTemperature", value: value, displayed: getUseActivityLogDebug())
 	sendEvent(name: "color", value: "#ffffff", displayed: getUseActivityLogDebug())
@@ -389,7 +395,7 @@ def runEffect(effect="pulse", color="", from_color="", cycles=5, period=0.5, bri
         effect = "pulse"
     }
 	
-    runLIFXEffect(["color" : "${color.toLowerCase()} brightness:${brightness}".trim(), "from_color" : "${from_color.toLowerCase()} brightness:${brightness}".trim(), "cycles" : "${cycles}" ,"period" : "${period}"], effect)
+    runLIFXEffect(["color" : "${color.toLowerCase()} brightness:${brightness}".trim(), "from_color" : "${from_color.toLowerCase()} brightness:${brightness}".trim(), "cycles" : cycles ,"period" : period], effect)
 }
 
 def apiFlash(cycles=5, period=0.5, brightness1=1.0, brightness2=0.0) {
@@ -406,7 +412,7 @@ def apiFlash(cycles=5, period=0.5, brightness1=1.0, brightness2=0.0) {
     	brightness2 = 1.0
     }
 
-	runLIFXEffect(["color" : "brightness:${brightness1}", "from_color" : "brightness:${brightness2}", "cycles" : "${cycles}" ,"period" : "${period}"], "pulse")
+	runLIFXEffect(["color" : "brightness:${brightness1}", "from_color" : "brightness:${brightness2}", "cycles" : cycles ,"period" : period], "pulse")
 }
 
 def apiBreathe(cycles=3, period=2.0, brightness1=1.0, brightness2=0.0) {
@@ -423,8 +429,9 @@ def apiBreathe(cycles=3, period=2.0, brightness1=1.0, brightness2=0.0) {
     	brightness2 = 1.0
     }
 
-	runLIFXEffect(["color" : "brightness:${brightness1}", "from_color" : "brightness:${brightness2}", "cycles" : "${cycles}" ,"period" : "${period}"], "breathe")
+	runLIFXEffect(["color" : "brightness:${brightness1}", "from_color" : "brightness:${brightness2}", "cycles" : cycles ,"period" : period], "breathe")
 }
+
 
 def getHex(val) {
 	if(val.toLowerCase() == "red") {
@@ -561,21 +568,26 @@ def sendLastCommand() {
 
 def sendLIFXCommand(commands) {
     def myKeySet = commands.keySet()
+    //log.warn myKeySet
     def newCommand = [:]
-    myKeySet.each {myKey->
-        newCommand[myKey] = commands."${myKey}".toString()
+    if (myKeySet[0]=="color"){
+    	myKeySet.each {myKey->
+       		newCommand[myKey] = commands."${myKey}".toString()
+    	}
+        commands = newCommand
     }
     
 	setLastCommand(commands)
-        log.debug newCommand
+    //log.debug newCommand
                
     def params = [
         uri: "https://api.lifx.com",
 		path: "/v1/lights/" + getGroups() + "/state",
         requestContentType: "application/json",
         headers: ["Content-Type": "application/json", "Accept": "application/json", "Authorization": "Bearer ${token}"],
-        body: newCommand
+        body: commands
     ]
+    //log.debug params
 	try {
     httpPut(params) { response ->
         if(response.getStatus() == 200 || response.getStatus() == 207) {
@@ -624,22 +636,31 @@ def sendLIFXCommand(commands) {
 
 def runLIFXEffect(commands, effect) {
     def myKeySet = commands.keySet()
+    //log.warn myKeySet
     def newCommand = [:]
     myKeySet.each {myKey->
-        newCommand[myKey] = commands."${myKey}".toString()
+        //log.error myKey
+        if(myKey.contains("color")){
+            newCommand[myKey] = commands."${myKey}".toString()
+        }
+        else{
+            newCommand[myKey] = commands."${myKey}"
+        }
+        commands = newCommand
     }
-        log.debug newCommand
+    //log.debug newCommand
     
 	def params = [
         uri: "https://api.lifx.com",
 		path: "/v1/lights/" + getGroups() + "/effects/" + effect,
         requestContentType: "application/json",
         headers: ["Content-Type": "application/json", "Accept": "application/json", "Authorization": "Bearer ${token}"],
-        body: newCommand
+        body: commands
     ]
-    log.info params
+    //log.info params
     try {
     httpPost(params) { response ->
+        
         if(response.getStatus() == 200 || response.getStatus() == 207) {
 			log("Response received from LFIX in the postReponseHandler.", "DEBUG")
     	}
