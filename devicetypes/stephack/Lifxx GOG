@@ -18,6 +18,12 @@
  *	4/15/18
  *	- edited Api Effects, setTemp and setLevel methods to adjsut for recent firmware changes
  *
+ *	4/18/18
+ *	- fixed ApiFlash and ApiBreathe
+ *	- added setColor functionality
+ *	- commented out webCore custom commands to clean up device page. Can easliy be readded by removing comments
+ *
+ *
  *
  *  Version 1.3.6 - Added more activity feed filtering. (10/9/2017) 
  *  Version 1.3.5 - Reduced activity feed chatter, also added a setting to disable on/off & setLevel messages. (10/8/2017)
@@ -63,7 +69,7 @@
  
 //include 'asynchttp_v1'
 
-def version(){return "v1.0.20180415"}
+def version(){return "v1.0.20180417"}
 
 import java.text.DecimalFormat;
 
@@ -78,17 +84,16 @@ metadata {
 		capability "Actuator"
         capability "Sensor"
         
-        command "setAdjustedColor"
-        command "setColor"
+        //command "setAdjustedColor"
         command "refresh"
-        command "poll"
-        command "syncOn"
-        command "syncOff"
-        command "runEffect"
-        command "transitionLevel"
+        //command "poll"
+        //command "syncOn"
+        //command "syncOff"
+        //command "runEffect"
+        //command "transitionLevel"
         command "apiFlash"
         command "apiBreathe"
-        command "setLevelAndTemperature"
+        //command "setLevelAndTemperature"
         
         attribute "colorName", "string"
         attribute "lightStatus", "string"
@@ -295,14 +300,13 @@ def setLevel(level, duration=getDefaultTransitionDuration()) {
 }
 
 def setColor(value) {
-	log("Begin setting groups color to ${value}.", "DEBUG")
+    log("Begin setting groups color to ${value}.", "DEBUG")
+    def hue = value.hue.toInteger() * 3.6
+    def sat = value.saturation.toInteger() / 100
+    def level = value.level.toInteger()
+    if(level) setLevel(level)
     
-    def data = [:]
-    data.hue = value.hue
-    data.saturation = value.saturation
-    data.level = device.currentValue("level")
-    
-    sendLIFXCommand([color: "saturation:${data.saturation / 100} hue:${data.hue * 3.6}"])
+    sendLIFXCommand([color: "saturation:${sat} hue:${hue}"])
     
     sendEvent(name: "hue", value: value.hue, displayed: getUseActivityLogDebug())
     sendEvent(name: "saturation", value: value.saturation, displayed: getUseActivityLogDebug())
@@ -399,7 +403,7 @@ def runEffect(effect="pulse", color="", from_color="", cycles=5, period=0.5, bri
 }
 
 def apiFlash(cycles=5, period=0.5, brightness1=1.0, brightness2=0.0) {
-    
+    log("Running ApiFlash", "DEBUG")
     if(brightness1 < 0.0) {
     	brightness1 = 0.0
     } else if(brightness1 > 1.0) {
@@ -416,7 +420,7 @@ def apiFlash(cycles=5, period=0.5, brightness1=1.0, brightness2=0.0) {
 }
 
 def apiBreathe(cycles=3, period=2.0, brightness1=1.0, brightness2=0.0) {
-    
+    log("Running ApiBreathe", "DEBUG")
     if(brightness1 < 0.0) {
     	brightness1 = 0.0
     } else if(brightness1 > 1.0) {
@@ -646,9 +650,8 @@ def runLIFXEffect(commands, effect) {
         else{
             newCommand[myKey] = commands."${myKey}"
         }
-        commands = newCommand
     }
-    //log.debug newCommand
+    commands = newCommand
     
 	def params = [
         uri: "https://api.lifx.com",
