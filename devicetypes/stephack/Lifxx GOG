@@ -69,7 +69,7 @@
  
 //include 'asynchttp_v1'
 
-def version(){return "v1.0.20180417"}
+def version(){return "v1.0.20180418"}
 
 import java.text.DecimalFormat;
 
