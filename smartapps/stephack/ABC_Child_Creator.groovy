@@ -5,6 +5,12 @@
  *	Author: SmartThings, modified by Bruce Ravenel, Dale Coffing, Stephan Hackett
  * 
  *
+ *	4/21/18 - added support for new Sonos Player devices (play/pause, next, previous, mute/unmute, volumeup/down)
+ *
+ *
+ *	3/28/18 - added option to set color and temp
+ *		test code for custom commands (not yet working)
+ *
  *  2/06/18 - converted code to hubitat format
  * 		removed ability to hide "held options"
  *		removed hwspecifics section as is no longer applicable
@@ -23,7 +29,7 @@
  *		Switched to parent/child config	
  *		removed button pics and descriptive text (not utilized by hubitat)
  */
-def version(){"v0.2.180328"}
+def version(){"v0.2.180421"}
 
 definition(
     name: "ABC Button Mapping",
@@ -96,7 +102,7 @@ def configButtonsPage(params) {
 def getButtonSections(buttonNumber) {
 	return {    	
         def myDetail
-        for(i in 1..19) {//Build 1st 19 Button Config Options
+        for(i in 1..20) {//Build 1st 19 Button Config Options
         	myDetail = getPrefDetails().find{it.sOrder==i}
         	section(myDetail.secLabel, hideable: true, hidden: !(shallHide("${myDetail.id}${buttonNumber}") || shallHide("${myDetail.sub}${buttonNumber}"))) {
 				input "${myDetail.id}${buttonNumber}_pushed", myDetail.cap, title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
@@ -110,7 +116,7 @@ def getButtonSections(buttonNumber) {
                 if(myDetail.sub && isReq("${myDetail.id}${buttonNumber}_doubleTapped")) input "${myDetail.sub}${buttonNumber}_doubleTapped", "number", title: myDetail.sTitle, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_held"), description: myDetail.sDesc
                 
 			}
-        	if(i==5 || i==10 || i==15 || i==19) section(" "){}
+        	if(i==5 || i==10 || i==15 || i==20) section(" "){}
         }
         /*
         section("Custom Command", hideable: true, hidden: !shallHide("ccDevice_${buttonNumber}")) {
@@ -139,18 +145,31 @@ def getButtonSections(buttonNumber) {
         paragraph "****************\nPUSHED\n****************"
 			input "notifications_${buttonNumber}_pushed", "text", title: "Message To Send When Pushed:", description: "Enter message to send", required: false, submitOnChange: collapseAll
             input "phone_${buttonNumber}_pushed","phone" ,title: "Send Text To:", description: "Enter phone number", required: false, submitOnChange: collapseAll
-            //input "valNotify${buttonNumber}_pushed","bool" ,title: "Notify In App?", required: false, defaultValue: false, submitOnChange: collapseAll
+            //input "valNotify${buttonNumber}_pushed","bool" ,title: "Notify in App?", required: false, defaultValue: false, submitOnChange: collapseAll
         paragraph "\n\n*************\nHELD\n*************"
 			input "notifications_${buttonNumber}_held", "text", title: "Message To Send When Held:", description: "Enter message to send", required: false, submitOnChange: collapseAll
 			input "phone_${buttonNumber}_held", "phone", title: "Send Text To:", description: "Enter phone number", required: false, submitOnChange: collapseAll
-			//input "valNotify${buttonNumber}_held", "bool", title: "Notify In App?", required: false, defaultValue: false, submitOnChange: collapseAll
+			//input "valNotify${buttonNumber}_held", "bool", title: "Notify in App?", required: false, defaultValue: false, submitOnChange: collapseAll
             if(showDouble()) {
             	paragraph "\n\n*************************\nDOUBLE TAPPED\n*************************"
 				input "notifications_${buttonNumber}_doubleTapped", "text", title: "Message To Send When Double Tapped:", description: "Enter message to send", required: false, submitOnChange: collapseAll
 				input "phone_${buttonNumber}_doubleTapped", "phone", title: "Send Text To:", description: "Enter phone number", required: false, submitOnChange: collapseAll
-				//input "valNotify${buttonNumber}_doubleTapped", "bool", title: "Notify In App?", required: false, defaultValue: false, submitOnChange: collapseAll           
+				//if(showDouble())input "valNotify${buttonNumber}_doubleTapped", "bool", title: "Notify in App?", required: false, defaultValue: false, submitOnChange: collapseAll           
             }
-		}        
+		}
+         section("Notifications:\nAudio/Speech", hideable:true , hidden: !shallHide("speechDevice_${buttonNumber}")) {
+        paragraph "****************\nPUSHED\n****************"
+             input "speechDevice_${buttonNumber}_pushed","capability.speechSynthesis" ,title: "Send Message To:", description: "Enter Speech Device", required: false, submitOnChange: collapseAll
+             input "speechTxt${buttonNumber}_pushed", "text", title: "Message To Speak When Pushed:", description: "Enter message to speak", required: false, submitOnChange: collapseAll
+        paragraph "\n\n*************\nHELD\n*************"
+			 input "speechDevice_${buttonNumber}_held", "capability.speechSynthesis", title: "Send Message To:", description: "Enter Speech Device", required: false, submitOnChange: collapseAll
+             input "speechTxt${buttonNumber}_held", "text", title: "Message To Speak When Held:", description: "Enter message to speak", required: false, submitOnChange: collapseAll
+            if(showDouble()) {
+            	paragraph "\n\n*************************\nDOUBLE TAPPED\n*************************"
+				input "speechDevice_${buttonNumber}_doubleTapped", "capability.speechSynthesis", title: "Send Message To:", description: "Enter Speech Device", required: false, submitOnChange: collapseAll
+                input "speechTxt${buttonNumber}_doubleTapped", "text", title: "Message To Speak When Double Tapped:", description: "Enter message to speak", required: false, submitOnChange: collapseAll
+            }
+		}       
 	}
 }
 
@@ -261,7 +280,8 @@ def getPrefDetails(){
      	 [id:"phrase_", desc:'Run Routine', comm:runRout, type:"normal"],
 		 [id:"notifications_", desc:'Send Push Notification', comm:messageHandle, sub:"valNotify", type:"bool"],
      	 [id:"phone_", desc:'Send SMS', comm:smsHandle, sub:"notifications_", type:"normal"],
-         [id:"container_", desc:'Cycle Playlist', comm:cyclePL, type:"normal"],         
+         [id:"speechDevice_", desc:'Send Msg To', comm:speechHandle, sub:"speechTxt", type:"normal"],
+         [id:"musicPreset_", sOrder:20, desc:'Cycle Preset', comm:cyclePL, type:"normal", secLabel: "Speaker Preset to Cycle", cap: "capability.musicPlayer"],         
         ]
     return detailMappings
 }
@@ -286,6 +306,12 @@ def buttonEvent(evt) {
 	}
 }
 
+def speechHandle(devices, msg){
+    log.debug "Sending ${msg} to ${device}"
+    devices.speak(msg)
+    
+}
+
 def turnOn(devices) {
 	log.debug "Turning On: $devices"
 	devices.on()
@@ -303,9 +329,14 @@ def turnDim(devices, level) {
 
 def colorSet(devices,hueVal,satVal) {
     log.debug "Setting Color (to H:$hueVal, S:$satVal): $devices"
-    //devices.setColor(hue:hueVal,saturation:satVal) 
-    devices.setHue(hueVal)
-    devices.setSaturation(satVal)
+    def myColor = [:]
+    myColor.hue = hueVal
+    myColor.saturation = satVal
+    myColor.level = 
+    log.info myColor
+    devices.setColor(myColor)//([hue:hueVal,saturation:satVal,level:50]) 
+    //devices.setHue(hueVal)
+    //devices.setSaturation(satVal)
 }
 
 def colorSetT(devices, temp) {
@@ -337,7 +368,12 @@ def adjustShade(device) {
 
 def speakerplaystate(device) {
 	log.debug "Toggling Play/Pause: $device"
-	device.currentValue('status').contains('playing')? device.pause() : device.play()
+    //log.info device.currentDriverType[0]
+    //if(device.currentDriverType[0] == "custom"){device.togPlay()}
+    //else{
+		device.currentStatus.contains('playing')? device.pause() : device.play()
+    //}
+    
 }
    
 def speakernexttrack(device) {
@@ -347,11 +383,13 @@ def speakernexttrack(device) {
 
 def speakermute(device) {
 	log.debug "Toggling Mute/Unmute: $device"
-	device.currentValue('mute').contains('unmuted')? device.mute() : device.unmute()
+    //device.refresh()
+	device.currentMute.contains('unmuted')? device.mute() : device.unmute()
 } 
 
 def levelUp(device, inclevel) {
 	log.debug "Incrementing Level (by +$inclevel: $device"
+    //device.refresh()
 	def currentVol = device.currentLevel[0]//device.currentValue('level')[0]	//currentlevel return a list...[0] is first item in list ie volume level
     def newVol = currentVol + inclevel
   	device.setLevel(newVol)
@@ -360,8 +398,9 @@ def levelUp(device, inclevel) {
 
 def levelDown(device, declevel) {
 	log.debug "Decrementing Level (by -declevel: $device"
+    //device.refresh()
 	def currentVol = device.currentLevel[0]//device.currentValue('level')[0]
-    def newVol = currentVol.toInteger()-declevel
+    def newVol = currentVol - declevel
   	device.setLevel(newVol)
     log.debug "Level decreased by $declevel to $newVol"
 }
@@ -425,7 +464,8 @@ def changeMode(mode) {
 def cyclePL(device) {
 	//int currPL = device.currentValue('lastRun')
    // int nextPL = currPL+1
-    device.cycleChild()
+    log.info device
+    device.cycle()
     //device.on(nextPL)
 
 }
