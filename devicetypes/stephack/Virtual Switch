@@ -1,5 +1,5 @@
 /**
- *  Virtual Switch
+ *  Virtual Switch - For Use with Virtual Containers
  *
  *  Copyright 2017 Stephan Hackett
  *
