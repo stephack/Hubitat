@@ -4,6 +4,8 @@
  *
  *	Author: SmartThings, modified by Bruce Ravenel, Dale Coffing, Stephan Hackett
  * 
+ *	6/02/18 - added ability to cycle custom Hampton Bay Zigbee Fan Controller
+ *
  *
  *	4/21/18 - added support for new Sonos Player devices (play/pause, next, previous, mute/unmute, volumeup/down)
  *
@@ -29,7 +31,7 @@
  *		Switched to parent/child config	
  *		removed button pics and descriptive text (not utilized by hubitat)
  */
-def version(){"v0.2.180421"}
+def version(){"v0.2.180602"}
 
 definition(
     name: "ABC Button Mapping",
@@ -102,7 +104,7 @@ def configButtonsPage(params) {
 def getButtonSections(buttonNumber) {
 	return {    	
         def myDetail
-        for(i in 1..20) {//Build 1st 19 Button Config Options
+        for(i in 1..21) {//Build 1st 19 Button Config Options
         	myDetail = getPrefDetails().find{it.sOrder==i}
         	section(myDetail.secLabel, hideable: true, hidden: !(shallHide("${myDetail.id}${buttonNumber}") || shallHide("${myDetail.sub}${buttonNumber}"))) {
 				input "${myDetail.id}${buttonNumber}_pushed", myDetail.cap, title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
@@ -116,7 +118,7 @@ def getButtonSections(buttonNumber) {
                 if(myDetail.sub && isReq("${myDetail.id}${buttonNumber}_doubleTapped")) input "${myDetail.sub}${buttonNumber}_doubleTapped", "number", title: myDetail.sTitle, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_held"), description: myDetail.sDesc
                 
 			}
-        	if(i==5 || i==10 || i==15 || i==20) section(" "){}
+        	if(i==5 || i==10 || i==16 || i==21) section(" "){}
         }
         /*
         section("Custom Command", hideable: true, hidden: !shallHide("ccDevice_${buttonNumber}")) {
@@ -271,17 +273,18 @@ def getPrefDetails(){
      	 [id:"speakervd_", sOrder:13, desc:'Volume -', comm:levelDown, sub:"valSpeakD", type:"hasSub", secLabel: "Speakers (Decrease Vol By)", cap: "capability.musicPlayer", sTitle: "Decrease by", sDesc:"0 to 15"],
          [id:'speakernt_', sOrder:14, desc:'Next Track', comm:speakernexttrack, type:"normal", secLabel: "Speakers (Go to Next Track)", cap: "capability.musicPlayer"],
     	 [id:'speakermu_', sOrder:15, desc:'Mute', comm:speakermute, type:"normal", secLabel: "Speakers (Toggle Mute/Unmute)", cap: "capability.musicPlayer"],
-         [id:'sirens_', sOrder:16, desc:'Toggle', comm:toggle, type:"normal", secLabel: "Sirens (Toggle)", cap: "capability.alarm"],
-     	 [id:"locks_", sOrder:17, desc:'Lock', comm:setUnlock, type:"normal", secLabel: "Locks (Lock Only)", cap: "capability.lock"],
-     	 [id:"fanAdjust_", sOrder:18,desc:'Adjust', comm:adjustFan, type:"normal", secLabel: "Fans (Adjust - Low, Medium, High, Off)", cap: "capability.switchLevel"],
-     	 [id:"shadeAdjust_", sOrder:19,desc:'Adjust', comm:adjustShade, type:"normal", secLabel: "Shades (Adjust - Up, Down, or Stop)", cap: "capability.doorControl"],
+         [id:"musicPreset_", sOrder:16, desc:'Cycle Preset', comm:cycle, type:"normal", secLabel: "Speaker Preset to Cycle", cap: "capability.speechSynthesis"],         
+         [id:'sirens_', sOrder:17, desc:'Toggle', comm:toggle, type:"normal", secLabel: "Sirens (Toggle)", cap: "capability.alarm"],
+     	 [id:"locks_", sOrder:18, desc:'Lock', comm:setUnlock, type:"normal", secLabel: "Locks (Lock Only)", cap: "capability.lock"],
+     	 [id:"fanAdjust_", sOrder:19,desc:'Adjust', comm:adjustFan, type:"normal", secLabel: "Fans (Adjust - Low, Medium, High, Off)", cap: "capability.switchLevel"],
+         [id:"fanCycle_", sOrder:20, desc:'Cycle Fan Speed', comm:cycle, type:"normal", secLabel: "Fans to Cycle", cap: "capability.fanControl"],         
+         [id:"shadeAdjust_", sOrder:21,desc:'Adjust', comm:adjustShade, type:"normal", secLabel: "Shades (Adjust - Up, Down, or Stop)", cap: "capability.doorControl"],
      	// [id:"ccDev_", sOrder:20, desc:'Device to CC ', comm:runCC, sub:"ccCommand", type:"hasSub", secLabel: "Device to run CC on", cap: "capability.switch", sTitle: "Command", sDesc:"0 to 100%"],
      	 [id:"mode_", desc:'Set Mode', comm:changeMode, type:"normal"],
      	 [id:"phrase_", desc:'Run Routine', comm:runRout, type:"normal"],
 		 [id:"notifications_", desc:'Send Push Notification', comm:messageHandle, sub:"valNotify", type:"bool"],
      	 [id:"phone_", desc:'Send SMS', comm:smsHandle, sub:"notifications_", type:"normal"],
          [id:"speechDevice_", desc:'Send Msg To', comm:speechHandle, sub:"speechTxt", type:"normal"],
-         [id:"musicPreset_", sOrder:20, desc:'Cycle Preset', comm:cyclePL, type:"normal", secLabel: "Speaker Preset to Cycle", cap: "capability.musicPlayer"],         
         ]
     return detailMappings
 }
@@ -461,13 +464,9 @@ def changeMode(mode) {
 	if (location.mode != mode && location.modes?.find { it.name == mode[0] }) setLocationMode(mode)
 }
 
-def cyclePL(device) {
-	//int currPL = device.currentValue('lastRun')
-   // int nextPL = currPL+1
-    log.info device
-    device.cycle()
-    //device.on(nextPL)
-
+def cycle(devices) {
+    log.debug "Cycling: $devices"
+    devices.cycle()
 }
 
 // execution filter methods
