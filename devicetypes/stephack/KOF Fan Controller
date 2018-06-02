@@ -15,8 +15,12 @@
  *  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  *  for the specific language governing permissions and limitations under the License.
+ *
+ *	06/02/18 - added cycle() command to cycle through fanSpeeds
+ *
+ *
  */
-def version() {"v1.0.20180530"}
+def version() {"v1.0.20180602"}
 
 metadata {
 	definition (name: "KOF Fan Controller", namespace: "stephack", author: "Stephan Hackett") {
@@ -33,6 +37,7 @@ metadata {
         command "lightOff"
         command "recreateChildDevices"
         command "setLightLevel", ["number"]
+        command "cycle"
         
         attribute "lightLevel", "number"
 
@@ -194,6 +199,13 @@ def setSpeed(speed) {
     if(mySpeed == 5 || mySpeed > 6 || mySpeed < 0) return
 	log.info "Adjusting Fan Speed to "+ getFanName()[mySpeed]
     return zigbee.writeAttribute(0x0202, 0x0000, 0x30, mySpeed)
+}
+
+def cycle(){
+    def speedNow = device.currentSpeed.toInteger()
+    if(speedNow !=4) newSpeed = speedNow + 1
+    else(newSpeed=0)
+    setSpeed(newSpeed)
 }
 
 def fanSync(whichFan) {
