@@ -4,6 +4,12 @@
  *
  *	Author: SmartThings, modified by Bruce Ravenel, Dale Coffing, Stephan Hackett
  * 
+ *
+ * 6/30/18 - adapted fan cycle to be compliant with fanControl capability (removed cycle support for custom driver)
+ *		added ability to set specific fan speed
+ *		added support for ramping (graceful dimming) - switch/bulb needs changeLevel capability and button device needs releaseableButton capability
+ *		
+ *
  *	6/02/18 - added ability to cycle custom Hampton Bay Zigbee Fan Controller
  *
  *
@@ -31,7 +37,7 @@
  *		Switched to parent/child config	
  *		removed button pics and descriptive text (not utilized by hubitat)
  */
-def version(){"v0.2.180602"}
+def version(){"v0.2.180630"}
 
 definition(
     name: "ABC Button Mapping",
@@ -104,21 +110,25 @@ def configButtonsPage(params) {
 def getButtonSections(buttonNumber) {
 	return {    	
         def myDetail
-        for(i in 1..21) {//Build 1st 19 Button Config Options
+        section("\nSWITCHES\n____________"){}
+        for(i in 1..23) {//Build 1st 23 Button Config Options
         	myDetail = getPrefDetails().find{it.sOrder==i}
         	section(myDetail.secLabel, hideable: true, hidden: !(shallHide("${myDetail.id}${buttonNumber}") || shallHide("${myDetail.sub}${buttonNumber}"))) {
 				input "${myDetail.id}${buttonNumber}_pushed", myDetail.cap, title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
-				if(myDetail.sub && isReq("${myDetail.id}${buttonNumber}_pushed")) input "${myDetail.sub}${buttonNumber}_pushed", "number", title: myDetail.sTitle, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_pushed"), description: myDetail.sDesc
-                if(myDetail.sub2 && isReq("${myDetail.id}${buttonNumber}_pushed")) input "${myDetail.sub2}${buttonNumber}_pushed", "number", title: myDetail.s2Title, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_pushed"), description: myDetail.s2Desc
-                //if(myDetail.sub3 && isReq("${myDetail.id}${buttonNumber}_pushed")) input "${myDetail.sub3}${buttonNumber}_pushed", "number", title: myDetail.s3Title, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_pushed"), description: myDetail.s3Desc
+				if(myDetail.sub && isReq("${myDetail.id}${buttonNumber}_pushed")) input "${myDetail.sub}${buttonNumber}_pushed", myDetail.subType, title: myDetail.sTitle, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_pushed"), description: myDetail.sDesc, options: myDetail.subOpt
+                if(myDetail.sub2 && isReq("${myDetail.id}${buttonNumber}_pushed")) input "${myDetail.sub2}${buttonNumber}_pushed", myDetail.subType, title: myDetail.s2Title, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_pushed"), description: myDetail.s2Desc, options: myDetail.subOpt
+                //if(myDetail.sub3 && isReq("${myDetail.id}${buttonNumber}_pushed")) input "${myDetail.sub3}${buttonNumber}_pushed", title: myDetail.s3Title, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_pushed"), description: myDetail.s3Desc, myDetail.subOpt
 				//if(showHeld()) input "${myDetail.id}${buttonNumber}_held", myDetail.cap, title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
-				input "${myDetail.id}${buttonNumber}_held", myDetail.cap, title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
-                if(myDetail.sub && isReq("${myDetail.id}${buttonNumber}_held")) input "${myDetail.sub}${buttonNumber}_held", "number", title: myDetail.sTitle, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_held"), description: myDetail.sDesc
+				if(showHeld()) input "${myDetail.id}${buttonNumber}_held", myDetail.cap, title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
+                if(myDetail.sub && isReq("${myDetail.id}${buttonNumber}_held")) input "${myDetail.sub}${buttonNumber}_held", myDetail.subType, title: myDetail.sTitle, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_held"), description: myDetail.sDesc, options: myDetail.subOpt
                 if(showDouble()) input "${myDetail.id}${buttonNumber}_doubleTapped", myDetail.cap, title: "When Double Tapped", multiple: true, required: false, submitOnChange: collapseAll
-                if(myDetail.sub && isReq("${myDetail.id}${buttonNumber}_doubleTapped")) input "${myDetail.sub}${buttonNumber}_doubleTapped", "number", title: myDetail.sTitle, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_held"), description: myDetail.sDesc
+                if(myDetail.sub && isReq("${myDetail.id}${buttonNumber}_doubleTapped")) input "${myDetail.sub}${buttonNumber}_doubleTapped", myDetail.subType, title: myDetail.sTitle, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_held"), description: myDetail.sDesc, options: myDetail.subOpt
                 
 			}
-        	if(i==5 || i==10 || i==16 || i==21) section(" "){}
+            if(i==5) section("\nDIMMERS\n___________"){}
+            if(i==11) section("\nSPEAKERS\n____________"){}
+            if(i==17) section("\nFANS & SHADES\n__________________"){}
+            if(i==21) section("\nOTHER\n_________"){} 
         }
         /*
         section("Custom Command", hideable: true, hidden: !shallHide("ccDevice_${buttonNumber}")) {
@@ -192,8 +202,12 @@ def isReq(myFeature) {
 }
 
 def showHeld() {
-	if(state.buttonType.contains("100+ ")) return false
+	//if(state.buttonType.contains("100+ ")) return false
+    if(state.buttonType == "Lutron Fast Pico") return false
 	else return true
+    //def devCaps = buttonDevice.capabilities.find{it.name=="ReleaseableButton"}
+    //if(devCaps) return true
+	//return false
 }
 
 def showDouble() {
@@ -249,6 +263,7 @@ def initialize() {
 	subscribe(buttonDevice, "pushed", buttonEvent)
 	subscribe(buttonDevice, "held", buttonEvent)
 	subscribe(buttonDevice, "doubleTapped", buttonEvent)
+    subscribe(buttonDevice, "released", buttonEvent)
     state.lastshadesUp = true
 }
 
@@ -261,26 +276,34 @@ def getPrefDetails(){
     	[[id:'lightOn_', sOrder:1, desc:'Turn On ', comm:turnOn, type:"normal", secLabel: "Switches (Turn On)", cap: "capability.switch"],
      	 [id:"lightOff_", sOrder:2, desc:'Turn Off', comm:turnOff, type:"normal", secLabel: "Switches (Turn Off)", cap: "capability.switch"],
          [id:'lights_', sOrder:3, desc:'Toggle On/Off', comm:toggle, type:"normal", secLabel: "Switches (Toggle On/Off)", cap: "capability.switch"],
-         [id:'lightColorTemp_', sOrder:4, desc:'Set Light Color Temp to ', comm:colorSetT, sub:"valColorTemp", type:"hasSub", secLabel: "Switches (Set Color Temp To)", cap: "capability.colorTemperature", sTitle: "Color Temp", sDesc:"2000 to 9000"],
-         [id:'lightColor_', sOrder:5, desc:'Set Light Color (H:', comm:colorSet, sub:"valHue", sub2:"valSat", sub3:"valColor", type:"hasSub", secLabel: "Switches (Set Color To)", cap: "capability.colorControl", sTitle: "Hue", s2Title: "Saturation", s3Title: "Color", sDesc:"0 to 100", s2Desc:"0 to 100", s3Desc:"ColorMap"],
-     	 [id:"lightDim_", sOrder:6, desc:'Dim to ', comm:turnDim, sub:"valLight", type:"hasSub", secLabel: "Dimmers (On to Level - Group 1)", cap: "capability.switchLevel", sTitle: "Bright Level", sDesc:"0 to 100%"],
-     	 [id:"lightD2m_", sOrder:7, desc:'Dim to ', comm:turnDim, sub:"valLight2", type:"hasSub", secLabel: "Dimmers (On to Level - Group 2)", cap: "capability.switchLevel", sTitle: "Bright Level", sDesc:"0 to 100%"],
-         [id:'dimPlus_', sOrder:8, desc:'Brightness +', comm:levelUp, sub:"valDimP", type:"hasSub", secLabel: "Dimmers (Increase Level By)", cap: "capability.switchLevel", sTitle: "Increase by", sDesc:"0 to 15"],
-     	 [id:'dimMinus_', sOrder:9, desc:'Brightness -', comm:levelDown, sub:"valDimM", type:"hasSub", secLabel: "Dimmers (Decrease Level By)", cap: "capability.switchLevel", sTitle: "Decrease by", sDesc:"0 to 15"],
-         [id:'lightsDT_', sOrder:10, desc:'Toggle Off/Dim to ', comm:dimToggle, sub:"valDT", type:"hasSub", secLabel: "Dimmers (Toggle OnToLevel/Off)", cap: "capability.switchLevel", sTitle: "Bright Level", sDesc:"0 to 100%"],
-         [id:"speakerpp_", sOrder:11, desc:'Toggle Play/Pause', comm:speakerplaystate, type:"normal", secLabel: "Speakers (Toggle Play/Pause)", cap: "capability.musicPlayer"],
-     	 [id:'speakervu_', sOrder:12, desc:'Volume +', comm:levelUp, sub:"valSpeakU", type:"hasSub", secLabel: "Speakers (Increase Vol By)", cap: "capability.musicPlayer", sTitle: "Increase by", sDesc:"0 to 15"],
-     	 [id:"speakervd_", sOrder:13, desc:'Volume -', comm:levelDown, sub:"valSpeakD", type:"hasSub", secLabel: "Speakers (Decrease Vol By)", cap: "capability.musicPlayer", sTitle: "Decrease by", sDesc:"0 to 15"],
-         [id:'speakernt_', sOrder:14, desc:'Next Track', comm:speakernexttrack, type:"normal", secLabel: "Speakers (Go to Next Track)", cap: "capability.musicPlayer"],
-    	 [id:'speakermu_', sOrder:15, desc:'Mute', comm:speakermute, type:"normal", secLabel: "Speakers (Toggle Mute/Unmute)", cap: "capability.musicPlayer"],
-         [id:"musicPreset_", sOrder:16, desc:'Cycle Preset', comm:cycle, type:"normal", secLabel: "Speaker Preset to Cycle", cap: "capability.speechSynthesis"],         
-         [id:'sirens_', sOrder:17, desc:'Toggle', comm:toggle, type:"normal", secLabel: "Sirens (Toggle)", cap: "capability.alarm"],
-     	 [id:"locks_", sOrder:18, desc:'Lock', comm:setUnlock, type:"normal", secLabel: "Locks (Lock Only)", cap: "capability.lock"],
-     	 [id:"fanAdjust_", sOrder:19,desc:'Adjust', comm:adjustFan, type:"normal", secLabel: "Fans (Adjust - Low, Medium, High, Off)", cap: "capability.switchLevel"],
-         [id:"fanCycle_", sOrder:20, desc:'Cycle Fan Speed', comm:cycle, type:"normal", secLabel: "Fans to Cycle", cap: "capability.fanControl"],         
+         [id:'lightColorTemp_', sOrder:4, desc:'Set Light Color Temp to ', comm:colorSetT, sub:"valColorTemp", subType:"number", type:"hasSub", secLabel: "Switches (Set Color Temp To)", cap: "capability.colorTemperature", sTitle: "Color Temp", sDesc:"2000 to 9000"],
+         [id:'lightColor_', sOrder:5, desc:'Set Light Color (H:', comm:colorSet, sub:"valHue", subType:"number", sub2:"valSat", sub3:"valColor", type:"hasSub", secLabel: "Switches (Set Color To)", cap: "capability.colorControl", sTitle: "Hue", s2Title: "Saturation", s3Title: "Color", sDesc:"0 to 100", s2Desc:"0 to 100", s3Desc:"ColorMap"],
+     	 
+         [id:"lightDim_", sOrder:6, desc:'Dim to ', comm:turnDim, sub:"valLight", subType:"number", type:"hasSub", secLabel: "Dimmers (On to Level - Group 1)", cap: "capability.switchLevel", sTitle: "Bright Level", sDesc:"0 to 100%"],
+     	 [id:"lightD2m_", sOrder:7, desc:'Dim to ', comm:turnDim, sub:"valLight2", subType:"number", type:"hasSub", secLabel: "Dimmers (On to Level - Group 2)", cap: "capability.switchLevel", sTitle: "Bright Level", sDesc:"0 to 100%"],
+         [id:'dimPlus_', sOrder:8, desc:'Brightness +', comm:levelUp, sub:"valDimP", subType:"number", type:"hasSub", secLabel: "Dimmers (Increase Level By)", cap: "capability.switchLevel", sTitle: "Increase by", sDesc:"0 to 15"],
+     	 [id:'dimMinus_', sOrder:9, desc:'Brightness -', comm:levelDown, sub:"valDimM", subType:"number", type:"hasSub", secLabel: "Dimmers (Decrease Level By)", cap: "capability.switchLevel", sTitle: "Decrease by", sDesc:"0 to 15"],
+         [id:'lightsDT_', sOrder:10, desc:'Toggle Off/Dim to ', comm:dimToggle, sub:"valDT", subType:"number", type:"hasSub", secLabel: "Dimmers (Toggle OnToLevel/Off)", cap: "capability.switchLevel", sTitle: "Bright Level", sDesc:"0 to 100%"],
+         [id:'lightsRamp_', sOrder:11, desc:'Ramp ', comm:rampUp, sub:"valDir", subType:"enum", subOpt:['up','down'], type:"hasSub", secLabel: "Dimmers (Ramp Up/Down)", cap: "capability.changeLevel", sTitle: "Ramp Direction (Up/Down)", sDesc:"Up or Down"],
+         
+         [id:"speakerpp_", sOrder:12, desc:'Toggle Play/Pause', comm:speakerplaystate, type:"normal", secLabel: "Speakers (Toggle Play/Pause)", cap: "capability.musicPlayer"],
+     	 [id:'speakervu_', sOrder:13, desc:'Volume +', comm:levelUp, sub:"valSpeakU", subType:"number", type:"hasSub", secLabel: "Speakers (Increase Vol By)", cap: "capability.musicPlayer", sTitle: "Increase by", sDesc:"0 to 15"],
+     	 [id:"speakervd_", sOrder:14, desc:'Volume -', comm:levelDown, sub:"valSpeakD", subType:"number", type:"hasSub", secLabel: "Speakers (Decrease Vol By)", cap: "capability.musicPlayer", sTitle: "Decrease by", sDesc:"0 to 15"],
+         [id:'speakernt_', sOrder:15, desc:'Next Track', comm:speakernexttrack, type:"normal", secLabel: "Speakers (Go to Next Track)", cap: "capability.musicPlayer"],
+    	 [id:'speakermu_', sOrder:16, desc:'Mute', comm:speakermute, type:"normal", secLabel: "Speakers (Toggle Mute/Unmute)", cap: "capability.musicPlayer"],
+         [id:"musicPreset_", sOrder:17, desc:'Cycle Preset', comm:cycle, type:"normal", secLabel: "Speaker Preset to Cycle", cap: "capability.switch"],         
+         
+         [id:'fanSet_', sOrder:18, desc:'Set Fan to  ', comm:setFan, sub:"valSpeed", subType:"enum", subOpt:['off','low','medium-low','medium','high'], type:"hasSub", secLabel: "Fan (Set Speed)", cap: "capability.fanControl", sTitle: "Set Speed to", sDesc:"L/ML/M/H"],
+         [id:"fanCycle_", sOrder:19, desc:'Cycle Fan Speed', comm:cycle, type:"normal", secLabel: "Fans to Cycle Speed", cap: "capability.fanControl"],         
+         [id:"fanAdjust_", sOrder:20,desc:'Adjust', comm:adjustFan, type:"normal", secLabel: "Fans to Cycle (Legacy)", cap: "capability.switchLevel"],
          [id:"shadeAdjust_", sOrder:21,desc:'Adjust', comm:adjustShade, type:"normal", secLabel: "Shades (Adjust - Up, Down, or Stop)", cap: "capability.doorControl"],
+         
+         [id:'sirens_', sOrder:22, desc:'Toggle', comm:toggle, type:"normal", secLabel: "Sirens (Toggle)", cap: "capability.alarm"],
+     	 [id:"locks_", sOrder:23, desc:'Lock', comm:setUnlock, type:"normal", secLabel: "Locks (Lock Only)", cap: "capability.lock"],
+     	 
      	// [id:"ccDev_", sOrder:20, desc:'Device to CC ', comm:runCC, sub:"ccCommand", type:"hasSub", secLabel: "Device to run CC on", cap: "capability.switch", sTitle: "Command", sDesc:"0 to 100%"],
-     	 [id:"mode_", desc:'Set Mode', comm:changeMode, type:"normal"],
+     	 
+         [id:"mode_", desc:'Set Mode', comm:changeMode, type:"normal"],
      	 [id:"phrase_", desc:'Run Routine', comm:runRout, type:"normal"],
 		 [id:"notifications_", desc:'Send Push Notification', comm:messageHandle, sub:"valNotify", type:"bool"],
      	 [id:"phone_", desc:'Send SMS', comm:smsHandle, sub:"notifications_", type:"normal"],
@@ -294,6 +317,13 @@ def buttonEvent(evt) {
     	def buttonNumber = evt.value
 		def pressType = evt.name
 		log.debug "$buttonDevice: Button $buttonNumber was $pressType"
+        
+        //detects if button is used for graceful hold to dim function then calls stopLevelChange()
+        if(pressType == "released" && settings["lightsRamp_${buttonNumber}_pushed"]){
+        	rampEnd(settings["lightsRamp_${buttonNumber}_pushed"])
+        }
+                             
+                             
     	def preferenceNames = settings.findAll{it.key.contains("_${buttonNumber}_${pressType}")}
     	preferenceNames.each{eachPref->
         	def prefDetail = getPrefDetails()?.find{eachPref.key.contains(it.id)}		//returns the detail map of id,desc,comm,sub
@@ -369,6 +399,10 @@ def adjustShade(device) {
     }
 }
 
+def setFan(devices, speed){
+    devices.setSpeed(speed)
+}
+
 def speakerplaystate(device) {
 	log.debug "Toggling Play/Pause: $device"
     //log.info device.currentDriverType[0]
@@ -406,6 +440,15 @@ def levelDown(device, declevel) {
     def newVol = currentVol - declevel
   	device.setLevel(newVol)
     log.debug "Level decreased by $declevel to $newVol"
+}
+
+def rampUp(devices, dir){
+    log.info " ramping ${dir}"
+    devices.startLevelChange(dir)
+}
+
+def rampEnd(device){
+    device.stopLevelChange()    
 }
 
 def setUnlock(devices) {
@@ -466,7 +509,14 @@ def changeMode(mode) {
 
 def cycle(devices) {
     log.debug "Cycling: $devices"
-    devices.cycle()
+    //devices.cycle()
+    log.info devices.currentSpeed
+    def mySpeed = devices.currentSpeed
+    if(mySpeed[0] == "off") devices.setSpeed(1) 
+    if(mySpeed[0] == "low") devices.setSpeed(2) 
+    if(mySpeed[0] == "medium-low") devices.setSpeed(3) 
+    if(mySpeed[0] == "medium") devices.setSpeed(4)
+    if(mySpeed[0] == "high") devices.setSpeed(0) 
 }
 
 // execution filter methods
