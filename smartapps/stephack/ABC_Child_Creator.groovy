@@ -5,6 +5,10 @@
  *	Author: SmartThings, modified by Bruce Ravenel, Dale Coffing, Stephan Hackett
  * 
  *
+ *
+ * 7/01/18 - added Released actions for all control sections
+ *		Pushed/Held/DoubleTapped/Released hidden from Dimmer Ramp section based on devices capabilities
+ *
  * 6/30/18 - adapted fan cycle to be compliant with fanControl capability (removed cycle support for custom driver)
  *		added ability to set specific fan speed
  *		added support for ramping (graceful dimming) - switch/bulb needs changeLevel capability and button device needs releaseableButton capability
@@ -37,7 +41,7 @@
  *		Switched to parent/child config	
  *		removed button pics and descriptive text (not utilized by hubitat)
  */
-def version(){"v0.2.180630"}
+def version(){"v0.2.180701"}
 
 definition(
     name: "ABC Button Mapping",
@@ -110,25 +114,27 @@ def configButtonsPage(params) {
 def getButtonSections(buttonNumber) {
 	return {    	
         def myDetail
-        section("\nSWITCHES\n____________"){}
+        section("\n   <img src=https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/Game-diamond-icon.png height=25 width=25>       SWITCHES"){}
         for(i in 1..23) {//Build 1st 23 Button Config Options
         	myDetail = getPrefDetails().find{it.sOrder==i}
-        	section(myDetail.secLabel, hideable: true, hidden: !(shallHide("${myDetail.id}${buttonNumber}") || shallHide("${myDetail.sub}${buttonNumber}"))) {
-				input "${myDetail.id}${buttonNumber}_pushed", myDetail.cap, title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
+        	//
+            section(myDetail.secLabel, hideable: true, hidden: !(shallHide("${myDetail.id}${buttonNumber}") || shallHide("${myDetail.sub}${buttonNumber}"))) {
+				if(showPush(myDetail.desc)) input "${myDetail.id}${buttonNumber}_pushed", myDetail.cap, title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
 				if(myDetail.sub && isReq("${myDetail.id}${buttonNumber}_pushed")) input "${myDetail.sub}${buttonNumber}_pushed", myDetail.subType, title: myDetail.sTitle, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_pushed"), description: myDetail.sDesc, options: myDetail.subOpt
                 if(myDetail.sub2 && isReq("${myDetail.id}${buttonNumber}_pushed")) input "${myDetail.sub2}${buttonNumber}_pushed", myDetail.subType, title: myDetail.s2Title, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_pushed"), description: myDetail.s2Desc, options: myDetail.subOpt
                 //if(myDetail.sub3 && isReq("${myDetail.id}${buttonNumber}_pushed")) input "${myDetail.sub3}${buttonNumber}_pushed", title: myDetail.s3Title, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_pushed"), description: myDetail.s3Desc, myDetail.subOpt
 				//if(showHeld()) input "${myDetail.id}${buttonNumber}_held", myDetail.cap, title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
-				if(showHeld()) input "${myDetail.id}${buttonNumber}_held", myDetail.cap, title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
+				if(showHeld(myDetail.desc)) input "${myDetail.id}${buttonNumber}_held", myDetail.cap, title: "When Held", multiple: true, required: false, submitOnChange: collapseAll
                 if(myDetail.sub && isReq("${myDetail.id}${buttonNumber}_held")) input "${myDetail.sub}${buttonNumber}_held", myDetail.subType, title: myDetail.sTitle, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_held"), description: myDetail.sDesc, options: myDetail.subOpt
-                if(showDouble()) input "${myDetail.id}${buttonNumber}_doubleTapped", myDetail.cap, title: "When Double Tapped", multiple: true, required: false, submitOnChange: collapseAll
+                if(showDouble(myDetail.desc)) input "${myDetail.id}${buttonNumber}_doubleTapped", myDetail.cap, title: "When Double Tapped", multiple: true, required: false, submitOnChange: collapseAll
                 if(myDetail.sub && isReq("${myDetail.id}${buttonNumber}_doubleTapped")) input "${myDetail.sub}${buttonNumber}_doubleTapped", myDetail.subType, title: myDetail.sTitle, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_held"), description: myDetail.sDesc, options: myDetail.subOpt
-                
+                if(showRelease(myDetail.desc)) input "${myDetail.id}${buttonNumber}_released", myDetail.cap, title: "When Released", multiple: true, required: false, submitOnChange: collapseAll
+                if(myDetail.sub && isReq("${myDetail.id}${buttonNumber}_released")) input "${myDetail.sub}${buttonNumber}_released", myDetail.subType, title: myDetail.sTitle, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_released"), description: myDetail.sDesc, options: myDetail.subOpt
 			}
-            if(i==5) section("\nDIMMERS\n___________"){}
-            if(i==11) section("\nSPEAKERS\n____________"){}
-            if(i==17) section("\nFANS & SHADES\n__________________"){}
-            if(i==21) section("\nOTHER\n_________"){} 
+            if(i==5) section("   <img src=https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/Game-diamond-icon.png height=25 width=25>       DIMMERS"){}
+            if(i==11) section("   <img src=https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/Game-diamond-icon.png height=25 width=25>       SPEAKERS"){}
+            if(i==17) section("   <img src=https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/Game-diamond-icon.png height=25 width=25>       FANS & SHADES"){}
+            if(i==21) section("   <img src=https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/Game-diamond-icon.png height=25 width=25>       OTHER"){} 
         }
         /*
         section("Custom Command", hideable: true, hidden: !shallHide("ccDevice_${buttonNumber}")) {
@@ -141,16 +147,18 @@ def getButtonSections(buttonNumber) {
 		*/
 		section("Set Mode", hideable: true, hidden: !shallHide("mode_${buttonNumber}")) {
 			input "mode_${buttonNumber}_pushed", "mode", title: "When Pushed", required: false, submitOnChange: collapseAll
-			input "mode_${buttonNumber}_held", "mode", title: "When Held", required: false, submitOnChange: collapseAll
+			if(showHeld()) input "mode_${buttonNumber}_held", "mode", title: "When Held", required: false, submitOnChange: collapseAll
             if(showDouble()) input "mode_${buttonNumber}_doubleTapped", "mode", title: "When Double Tapped", required: false, submitOnChange: collapseAll
+            if(showRelease()) input "mode_${buttonNumber}_released", "mode", title: "When Released", required: false, submitOnChange: collapseAll
 		}
 		def phrases = location.helloHome?.getPhrases()*.label
 		if (phrases) {
         	section("Run Routine", hideable: true, hidden: !shallHide("phrase_${buttonNumber}")) {
 				//log.trace phrases
 				input "phrase_${buttonNumber}_pushed", "enum", title: "When Pushed", required: false, options: phrases, submitOnChange: collapseAll
-				input "phrase_${buttonNumber}_held", "enum", title: "When Held", required: false, options: phrases, submitOnChange: collapseAll
+				if(showHeld())input "phrase_${buttonNumber}_held", "enum", title: "When Held", required: false, options: phrases, submitOnChange: collapseAll
                 if(showDouble()) input "phrase_${buttonNumber}_doubleTapped", "enum", title: "When Double Tapped", required: false, options: phrases, submitOnChange: collapseAll
+                if(showRelease())input "phrase_${buttonNumber}_released", "enum", title: "When Released", required: false, options: phrases, submitOnChange: collapseAll
 			}
 		}
         section("Notifications:\nSMS", hideable:true , hidden: !shallHide("notifications_${buttonNumber}")) {
@@ -158,42 +166,59 @@ def getButtonSections(buttonNumber) {
 			input "notifications_${buttonNumber}_pushed", "text", title: "Message To Send When Pushed:", description: "Enter message to send", required: false, submitOnChange: collapseAll
             input "phone_${buttonNumber}_pushed","phone" ,title: "Send Text To:", description: "Enter phone number", required: false, submitOnChange: collapseAll
             //input "valNotify${buttonNumber}_pushed","bool" ,title: "Notify in App?", required: false, defaultValue: false, submitOnChange: collapseAll
-        paragraph "\n\n*************\nHELD\n*************"
-			input "notifications_${buttonNumber}_held", "text", title: "Message To Send When Held:", description: "Enter message to send", required: false, submitOnChange: collapseAll
-			input "phone_${buttonNumber}_held", "phone", title: "Send Text To:", description: "Enter phone number", required: false, submitOnChange: collapseAll
-			//input "valNotify${buttonNumber}_held", "bool", title: "Notify in App?", required: false, defaultValue: false, submitOnChange: collapseAll
+            if(showHeld()) {
+            	paragraph "\n\n*************\nHELD\n*************"
+				input "notifications_${buttonNumber}_held", "text", title: "Message To Send When Held:", description: "Enter message to send", required: false, submitOnChange: collapseAll
+				input "phone_${buttonNumber}_held", "phone", title: "Send Text To:", description: "Enter phone number", required: false, submitOnChange: collapseAll
+				//input "valNotify${buttonNumber}_held", "bool", title: "Notify in App?", required: false, defaultValue: false, submitOnChange: collapseAll
+            }
             if(showDouble()) {
             	paragraph "\n\n*************************\nDOUBLE TAPPED\n*************************"
 				input "notifications_${buttonNumber}_doubleTapped", "text", title: "Message To Send When Double Tapped:", description: "Enter message to send", required: false, submitOnChange: collapseAll
 				input "phone_${buttonNumber}_doubleTapped", "phone", title: "Send Text To:", description: "Enter phone number", required: false, submitOnChange: collapseAll
 				//if(showDouble())input "valNotify${buttonNumber}_doubleTapped", "bool", title: "Notify in App?", required: false, defaultValue: false, submitOnChange: collapseAll           
             }
+            if(showRelease()) {
+            	paragraph "\n\n*************\nRELEASED\n*************"
+				input "notifications_${buttonNumber}_released", "text", title: "Message To Send When Released:", description: "Enter message to send", required: false, submitOnChange: collapseAll
+				input "phone_${buttonNumber}_released", "phone", title: "Send Text To:", description: "Enter phone number", required: false, submitOnChange: collapseAll
+				//input "valNotify${buttonNumber}_released", "bool", title: "Notify in App?", required: false, defaultValue: false, submitOnChange: collapseAll
+            }
 		}
-         section("Notifications:\nAudio/Speech", hideable:true , hidden: !shallHide("speechDevice_${buttonNumber}")) {
+    	section("Notifications:\nAudio/Speech", hideable:true , hidden: !shallHide("speechDevice_${buttonNumber}")) {
         paragraph "****************\nPUSHED\n****************"
-             input "speechDevice_${buttonNumber}_pushed","capability.speechSynthesis" ,title: "Send Message To:", description: "Enter Speech Device", required: false, submitOnChange: collapseAll
-             input "speechTxt${buttonNumber}_pushed", "text", title: "Message To Speak When Pushed:", description: "Enter message to speak", required: false, submitOnChange: collapseAll
-        paragraph "\n\n*************\nHELD\n*************"
-			 input "speechDevice_${buttonNumber}_held", "capability.speechSynthesis", title: "Send Message To:", description: "Enter Speech Device", required: false, submitOnChange: collapseAll
-             input "speechTxt${buttonNumber}_held", "text", title: "Message To Speak When Held:", description: "Enter message to speak", required: false, submitOnChange: collapseAll
+        	input "speechDevice_${buttonNumber}_pushed","capability.speechSynthesis" ,title: "Send Message To:", description: "Enter Speech Device", required: false, submitOnChange: collapseAll
+        	input "speechTxt${buttonNumber}_pushed", "text", title: "Message To Speak When Pushed:", description: "Enter message to speak", required: false, submitOnChange: collapseAll
+        	if(showHeld()) {
+             	paragraph "\n\n*************\nHELD\n*************"
+			 	input "speechDevice_${buttonNumber}_held", "capability.speechSynthesis", title: "Send Message To:", description: "Enter Speech Device", required: false, submitOnChange: collapseAll
+             	input "speechTxt${buttonNumber}_held", "text", title: "Message To Speak When Held:", description: "Enter message to speak", required: false, submitOnChange: collapseAll
+            }
             if(showDouble()) {
             	paragraph "\n\n*************************\nDOUBLE TAPPED\n*************************"
 				input "speechDevice_${buttonNumber}_doubleTapped", "capability.speechSynthesis", title: "Send Message To:", description: "Enter Speech Device", required: false, submitOnChange: collapseAll
                 input "speechTxt${buttonNumber}_doubleTapped", "text", title: "Message To Speak When Double Tapped:", description: "Enter message to speak", required: false, submitOnChange: collapseAll
             }
+            if(showRelease()) {
+             	paragraph "\n\n*************\nRELEASED\n*************"
+			 	input "speechDevice_${buttonNumber}_released", "capability.speechSynthesis", title: "Send Message To:", description: "Enter Speech Device", required: false, submitOnChange: collapseAll
+             	input "speechTxt${buttonNumber}_released", "text", title: "Message To Speak When Released:", description: "Enter message to speak", required: false, submitOnChange: collapseAll
+            }
 		}       
 	}
 }
 
+/*
 def getDevCommands(){
     def options = []
     options =  lightOn_1_pushed.capabilities.commands//capabilities
     
     log.error options
 }
+*/
 
 def shallHide(myFeature) {
-	if(collapseAll) return (settings["${myFeature}_pushed"]||settings["${myFeature}_held"]||settings["${myFeature}_doubleTapped"]||settings["${myFeature}"])
+	if(collapseAll) return (settings["${myFeature}_pushed"]||settings["${myFeature}_held"]||settings["${myFeature}_doubleTapped"]||settings["${myFeature}_released"]||settings["${myFeature}"])
 	return true
 }
 
@@ -201,17 +226,32 @@ def isReq(myFeature) {
     (settings[myFeature])? true : false
 }
 
-def showHeld() {
-	//if(state.buttonType.contains("100+ ")) return false
-    if(state.buttonType == "Lutron Fast Pico") return false
-	else return true
-    //def devCaps = buttonDevice.capabilities.find{it.name=="ReleaseableButton"}
-    //if(devCaps) return true
-	//return false
+def showPush(desc) {
+    if(buttonDevice.capabilities.find{it.name=="PushableButton"}){ 	//is device pushable?
+        if(desc.contains("Ramp")){									
+            if(buttonDevice.capabilities.find{it.name=="HoldableButton"}) return false	//if this is the Ramp section and device is also Holdable, then hide Pushed option
+        }
+        return true
+    }
+	return false
 }
 
-def showDouble() {
+def showHeld(desc) {
+    def devCaps = buttonDevice.capabilities.find{it.name=="HoldableButton"}
+    if(devCaps) return true
+	return false
+}
+
+def showDouble(desc) {
+    if(desc && desc.contains("Ramp")) return false //remove DoubleTapped option when setting smooth dimming button/devices
     def devCaps = buttonDevice.capabilities.find{it.name=="DoubleTapableButton"}
+    if(devCaps) return true
+	return false
+}
+
+def showRelease(desc) {
+    if(desc && desc.contains("Ramp")) return false //remove On Release option when setting smooth dimming button/devices
+    def devCaps = buttonDevice.capabilities.find{it.name=="ReleasableButton"}
     if(devCaps) return true
 	return false
 }
@@ -222,7 +262,7 @@ def getDescription(dNumber) {
     if(settings.find{it.key.contains("_${dNumber}_pushed")}) descript = "\nPUSHED:"+getDescDetails(dNumber,"_pushed")+"\n"
     if(settings.find{it.key.contains("_${dNumber}_held")}) descript = descript+"\nHELD:"+getDescDetails(dNumber,"_held")+"\n"
     if(settings.find{it.key.contains("_${dNumber}_doubleTapped")}) descript = descript+"\nTAPx2:"+getDescDetails(dNumber,"_doubleTapped")+"\n"
-    //if(anySettings) descript = "PUSHED:"+getDescDetails(dNumber,"_pushed")+"\n\nHELD:"+getDescDetails(dNumber,"_held")//"CONFIGURED : Tap to edit"
+    if(settings.find{it.key.contains("_${dNumber}_released")}) descript = descript+"\nRELEASED:"+getDescDetails(dNumber,"_released")+"\n"
 	return descript
 }
 
@@ -291,9 +331,9 @@ def getPrefDetails(){
      	 [id:"speakervd_", sOrder:14, desc:'Volume -', comm:levelDown, sub:"valSpeakD", subType:"number", type:"hasSub", secLabel: "Speakers (Decrease Vol By)", cap: "capability.musicPlayer", sTitle: "Decrease by", sDesc:"0 to 15"],
          [id:'speakernt_', sOrder:15, desc:'Next Track', comm:speakernexttrack, type:"normal", secLabel: "Speakers (Go to Next Track)", cap: "capability.musicPlayer"],
     	 [id:'speakermu_', sOrder:16, desc:'Mute', comm:speakermute, type:"normal", secLabel: "Speakers (Toggle Mute/Unmute)", cap: "capability.musicPlayer"],
-         [id:"musicPreset_", sOrder:17, desc:'Cycle Preset', comm:cycle, type:"normal", secLabel: "Speaker Preset to Cycle", cap: "capability.switch"],         
+         [id:"musicPreset_", sOrder:17, desc:'Cycle Preset', comm:cyclePlaylist, type:"normal", secLabel: "Speaker Preset to Cycle", cap: "capability.switch"],         
          
-         [id:'fanSet_', sOrder:18, desc:'Set Fan to  ', comm:setFan, sub:"valSpeed", subType:"enum", subOpt:['off','low','medium-low','medium','high'], type:"hasSub", secLabel: "Fan (Set Speed)", cap: "capability.fanControl", sTitle: "Set Speed to", sDesc:"L/ML/M/H"],
+         [id:'fanSet_', sOrder:18, desc:'Set Fan to ', comm:setFan, sub:"valSpeed", subType:"enum", subOpt:['off','low','medium-low','medium','high'], type:"hasSub", secLabel: "Fan (Set Speed)", cap: "capability.fanControl", sTitle: "Set Speed to", sDesc:"L/ML/M/H"],
          [id:"fanCycle_", sOrder:19, desc:'Cycle Fan Speed', comm:cycle, type:"normal", secLabel: "Fans to Cycle Speed", cap: "capability.fanControl"],         
          [id:"fanAdjust_", sOrder:20,desc:'Adjust', comm:adjustFan, type:"normal", secLabel: "Fans to Cycle (Legacy)", cap: "capability.switchLevel"],
          [id:"shadeAdjust_", sOrder:21,desc:'Adjust', comm:adjustShade, type:"normal", secLabel: "Shades (Adjust - Up, Down, or Stop)", cap: "capability.doorControl"],
@@ -322,6 +362,11 @@ def buttonEvent(evt) {
         if(pressType == "released" && settings["lightsRamp_${buttonNumber}_pushed"]){
         	rampEnd(settings["lightsRamp_${buttonNumber}_pushed"])
         }
+        if(pressType == "released" && settings["lightsRamp_${buttonNumber}_held"]){
+        	rampEnd(settings["lightsRamp_${buttonNumber}_held"])
+        }        
+        
+        
                              
                              
     	def preferenceNames = settings.findAll{it.key.contains("_${buttonNumber}_${pressType}")}
@@ -420,13 +465,11 @@ def speakernexttrack(device) {
 
 def speakermute(device) {
 	log.debug "Toggling Mute/Unmute: $device"
-    //device.refresh()
 	device.currentMute.contains('unmuted')? device.mute() : device.unmute()
 } 
 
 def levelUp(device, inclevel) {
 	log.debug "Incrementing Level (by +$inclevel: $device"
-    //device.refresh()
 	def currentVol = device.currentLevel[0]//device.currentValue('level')[0]	//currentlevel return a list...[0] is first item in list ie volume level
     def newVol = currentVol + inclevel
   	device.setLevel(newVol)
@@ -435,7 +478,6 @@ def levelUp(device, inclevel) {
 
 def levelDown(device, declevel) {
 	log.debug "Decrementing Level (by -declevel: $device"
-    //device.refresh()
 	def currentVol = device.currentLevel[0]//device.currentValue('level')[0]
     def newVol = currentVol - declevel
   	device.setLevel(newVol)
@@ -509,7 +551,6 @@ def changeMode(mode) {
 
 def cycle(devices) {
     log.debug "Cycling: $devices"
-    //devices.cycle()
     log.info devices.currentSpeed
     def mySpeed = devices.currentSpeed
     if(mySpeed[0] == "off") devices.setSpeed(1) 
@@ -519,6 +560,9 @@ def cycle(devices) {
     if(mySpeed[0] == "high") devices.setSpeed(0) 
 }
 
+def cyclePlaylist(devices){
+    devices.cycle()
+}
 // execution filter methods
 private getAllOk() {
 	modeOk && daysOk && timeOk
