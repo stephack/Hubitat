@@ -42,7 +42,7 @@ def mainPage() {
             app(name: "childApps", appName: "ABC Button Mapping", namespace: "stephack", title: "New Button Device Mapping", multiple: true)
         }
         section("Version Info, User's Guide") {
-       	href (name: "aboutPage", title: "Advanced Button Controller \n"+childVer, 
+       	href (name: "aboutPage", title: "<img src=https://raw.githubusercontent.com/stephack/ABC/master/resources/images/abcNew.png height=75 width=75> Advanced Button Controller \n"+childVer, 
        		description: "Tap to get Smartapp Info and User's Guide.",
        		//image: verImgCheck(childVer), required: false, // check repo for image that matches current version. Displays update icon if missing
        		page: "aboutPage"
@@ -75,7 +75,7 @@ def aboutPage() {
 
 private def textHelp() {
 	def text =
-	section("User's Guide - Advanced Button Controller") {
+	section("<img src=https://raw.githubusercontent.com/stephack/ABC/master/resources/images/abcNew.png height=36 width=36> User's Guide - Advanced Button Controller") {
     	paragraph "This smartapp allows you to use a device with buttons including, but not limited to:\n\n  Aeon Labs Minimotes\n"+
     	"  HomeSeer HS-WD100+ switches**\n  HomeSeer HS-WS100+ switches\n  Lutron Picos***\n\n"+
 		"It is a heavily modified version of @dalec's 'Button Controller Plus' which is in turn"+
@@ -94,23 +94,34 @@ private def textHelp() {
         paragraph "	Switches - Toggle \n"+
         "	Switches - Turn On \n"+
         "	Switches - Turn Off \n"+
-        "	Dimmers - Toggle \n"+
+        "	Switches - Toggle \n"+
+            
         "	Dimmers - Set Level (Group 1) \n"+
         "	Dimmers - Set Level (Group 2) \n"+
         "	*Dimmers - Inc Level \n"+
         "	*Dimmers - Dec Level \n"+
-        "	Fans - Low, Medium, High, Off \n"+
-        "	Shades - Up, Down, or Stop \n"+
-        "	Locks - Unlock Only \n"+
-        "	Speaker - Play/Pause \n"+
+        "	*Dimmers - Toggle on to Level \n"+
+        "	*Dimmers - Ramp Up/Down (Smooth Dimming) \n"+
+            
+        "	*Color Lights - Set Temperature \n"+
+        "	*Color Lights - Set Color \n"+
+        
+        "	*Speaker - Toggle Play/Pause \n"+
+        "	*Speaker - Increment Volume \n"+
+        "	*Speaker - Decrement Volume \n"+
         "	*Speaker - Next Track \n"+
         "	*Speaker - Mute/Unmute \n"+
-        "	*Speaker - Volume Up \n"+
-        "	*Speaker - Volume Down \n"+
-        "	Set Modes \n"+
-        "	Run Routines \n"+
+        "	*Speaker - Cycle Preset \n"+
+            
+         "	Fans - Set Speed \n"+
+        "	Fans - Cycle Speed \n"+    
+        "	Fans - Legacy Cycle (Low, Medium, High, Off) \n"+  
+            
+        "	Locks - Unlock Only \n"+
+        "	Shades - Up, Down, or Stop \n"+
         "	Sirens - Toggle \n"+
-        "	Push Notifications \n"+
+        "	Set Modes \n"+
+        "	Speech Notifications \n"+
         "	SMS Notifications"
 	}
 	section ("** Quirk for HS-WD100+ on Button 5 & 6:"){
@@ -122,8 +133,8 @@ private def textHelp() {
         " changing the dim level of the switch simultaneously as well.\n"+
         "This quirk doesn't exist of course with the HS-HS100+ since it is not a dimmer."
 	}
-	section("*** Lutron Pico Requirements:"){
-        paragraph "Lutron Picos are not natively supported by SmartThings. A Lutron SmartBridge Pro, a device running @njschwartz's python script (or node.js) and the Lutron Caseta Service Manager"+
-    	" SmartApp are also required for this functionality!\nSearch the forums for details."
+	section("*** Lutron Pico:"){
+        paragraph "There are 2 types of Pico configurations in HE:\n 1. The Standard Picos - with pushed events and held events (followed by released events).\n"+
+    	"2. The Fast Picos - with pushed events followed by released events (no held events)."
 	}
 }
