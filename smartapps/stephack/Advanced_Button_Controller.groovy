@@ -55,7 +55,7 @@ def mainPage() {
 
 def verImgCheck(childVer){
 	def params = [
-    	uri: "https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/abc_${childVer}1.png",
+    	uri: "https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/abc_${childVer}.png",
 	]
 	try {
    		httpGet(params) { resp ->
