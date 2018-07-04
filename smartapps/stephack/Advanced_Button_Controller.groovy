@@ -39,10 +39,10 @@ def mainPage() {
         	childVer = childApps.first().version()
         }
         section("Create a new button device mapping.") {
-            app(name: "childApps", appName: "ABC Button Mapping", namespace: "stephack", title: "New Button Device Mapping", multiple: true)
+            app(name: "childApps", appName: "ABC Button Mapping", namespace: "stephack", title: "<img src=https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/New.png height=50 width=50>      New Button Device Mapping", multiple: true)
         }
         section("Version Info, User's Guide") {
-       	href (name: "aboutPage", title: "<img src=https://raw.githubusercontent.com/stephack/ABC/master/resources/images/abcNew.png height=75 width=75> Advanced Button Controller \n"+childVer, 
+       	href (name: "aboutPage", title: "<img src=https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/abc2.png height=80 width=80>   Advanced Button Controller \n"+childVer, 
        		description: "Tap to get Smartapp Info and User's Guide.",
        		//image: verImgCheck(childVer), required: false, // check repo for image that matches current version. Displays update icon if missing
        		page: "aboutPage"
