@@ -4,6 +4,9 @@
  *
  *	Author: SmartThings, modified by Bruce Ravenel, Dale Coffing, Stephan Hackett
  * 
+ * 7/03/18 - code cleanup
+ *		Added pictures enhancements and reordered options for better flow
+ *		Corrected default child app label (previously defaulted to "ABC Button Mapping" on first save)
  *
  *
  * 7/01/18 - added Released actions for all control sections
@@ -41,7 +44,7 @@
  *		Switched to parent/child config	
  *		removed button pics and descriptive text (not utilized by hubitat)
  */
-def version(){"v0.2.180701"}
+def version(){"v0.2.180703"}
 
 definition(
     name: "ABC Button Mapping",
@@ -69,21 +72,20 @@ preferences {
 def chooseButton() {
 	dynamicPage(name: "chooseButton", install: true, uninstall: true) {
 		section("Step 1: Select Your Button Device") {
-			input "buttonDevice", "capability.pushableButton", title: "Button Device", multiple: false, required: true, submitOnChange: true
+            input "buttonDevice", "capability.pushableButton", title: "${getImage("Device", "50")}Button Device", description: "Tap to Select", multiple: false, required: true, submitOnChange: true
 		}
         if(buttonDevice){
         	state.buttonType =  buttonDevice.typeName
             if(state.buttonType.contains("Aeon Minimote")) state.buttonType =  "Aeon Minimote"
             log.debug "Device Type is now set to: "+state.buttonType
             state.buttonCount = manualCount?: buttonDevice.currentValue('numberOfButtons')
-            //if(state.buttonCount==null) state.buttonCount = buttonDevice.currentValue('numButtons')	//added for kyse minimote(hopefully will be updated to correct attribute name)
             section("Step 2: Configure Your Buttons"){
             	if(state.buttonCount<1) {
                 	paragraph "The selected button device did not report the number of buttons it has. Please specify in the Advanced Config section below."
                 }
                 else {
                 	for(i in 1..state.buttonCount){
-                		href "configButtonsPage", title: "Button ${i}", state: getDescription(i)!="Tap to configure"? "complete": null, description: getDescription(i), params: [pbutton: i]
+                		href "configButtonsPage", title: "${getImage("Button", "20")} Button ${i}", state: getDescription(i)!="Tap to configure"? "complete": null, description: getDescription(i), params: [pbutton: i]
                     }
             	}
             }
@@ -94,7 +96,6 @@ def chooseButton() {
         section("Advanced Config:", hideable: true, hidden: hideOptionsSection()) {
             	input "manualCount", "number", title: "Set/Override # of Buttons?", required: false, description: "Only set if DTH does not report", submitOnChange: true
                 input "collapseAll", "bool", title: "Collapse Unconfigured Sections?", defaultValue: true
-                //input "hwSpecifics", "bool", title: "Hide H/W Specific Details?", defaultValue: false
 			}
         section(title: "Only Execute When:", hideable: true, hidden: hideOptionsSection()) {
 			def timeLabel = timeIntervalLabel()
@@ -114,11 +115,11 @@ def configButtonsPage(params) {
 def getButtonSections(buttonNumber) {
 	return {    	
         def myDetail
-        section("\n   <img src=https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/Game-diamond-icon.png height=25 width=25>       SWITCHES"){}
+        section("\n${getImage("Switches", "36")} SWITCHES"){}
         for(i in 1..23) {//Build 1st 23 Button Config Options
         	myDetail = getPrefDetails().find{it.sOrder==i}
         	//
-            section(myDetail.secLabel, hideable: true, hidden: !(shallHide("${myDetail.id}${buttonNumber}") || shallHide("${myDetail.sub}${buttonNumber}"))) {
+            section(title: getImage(myDetail.secLabel, "10") + myDetail.secLabel, hideable: true, hidden: !(shallHide("${myDetail.id}${buttonNumber}") || shallHide("${myDetail.sub}${buttonNumber}"))) {
 				if(showPush(myDetail.desc)) input "${myDetail.id}${buttonNumber}_pushed", myDetail.cap, title: "When Pushed", multiple: true, required: false, submitOnChange: collapseAll
 				if(myDetail.sub && isReq("${myDetail.id}${buttonNumber}_pushed")) input "${myDetail.sub}${buttonNumber}_pushed", myDetail.subType, title: myDetail.sTitle, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_pushed"), description: myDetail.sDesc, options: myDetail.subOpt
                 if(myDetail.sub2 && isReq("${myDetail.id}${buttonNumber}_pushed")) input "${myDetail.sub2}${buttonNumber}_pushed", myDetail.subType, title: myDetail.s2Title, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_pushed"), description: myDetail.s2Desc, options: myDetail.subOpt
@@ -131,10 +132,11 @@ def getButtonSections(buttonNumber) {
                 if(showRelease(myDetail.desc)) input "${myDetail.id}${buttonNumber}_released", myDetail.cap, title: "When Released", multiple: true, required: false, submitOnChange: collapseAll
                 if(myDetail.sub && isReq("${myDetail.id}${buttonNumber}_released")) input "${myDetail.sub}${buttonNumber}_released", myDetail.subType, title: myDetail.sTitle, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_released"), description: myDetail.sDesc, options: myDetail.subOpt
 			}
-            if(i==5) section("   <img src=https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/Game-diamond-icon.png height=25 width=25>       DIMMERS"){}
-            if(i==11) section("   <img src=https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/Game-diamond-icon.png height=25 width=25>       SPEAKERS"){}
-            if(i==17) section("   <img src=https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/Game-diamond-icon.png height=25 width=25>       FANS & SHADES"){}
-            if(i==21) section("   <img src=https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/Game-diamond-icon.png height=25 width=25>       OTHER"){} 
+            if(i==3) section("${getImage("Dimmers", "36")} DIMMERS"){}
+            if(i==9) section("${getImage("Color", "36")} COLOR LIGHTS"){}
+            if(i==11) section("${getImage("Speakers", "36")} SPEAKERS"){}
+            if(i==17) section("${getImage("Fans", "36")} FANS"){}
+            if(i==20) section("${getImage("Other", "36")} OTHER"){} 
         }
         /*
         section("Custom Command", hideable: true, hidden: !shallHide("ccDevice_${buttonNumber}")) {
@@ -145,7 +147,7 @@ def getButtonSections(buttonNumber) {
             //if(showDouble()) input "ccDevice_${buttonNumber}_doubleTapped", "capability.switch", title: "When Double Tapped", required: false, submitOnChange: collapseAll
 		}
 		*/
-		section("Set Mode", hideable: true, hidden: !shallHide("mode_${buttonNumber}")) {
+		section("${getImage("Mode", "36")} Set Mode                        ", hideable: true, hidden: !shallHide("mode_${buttonNumber}")) {
 			input "mode_${buttonNumber}_pushed", "mode", title: "When Pushed", required: false, submitOnChange: collapseAll
 			if(showHeld()) input "mode_${buttonNumber}_held", "mode", title: "When Held", required: false, submitOnChange: collapseAll
             if(showDouble()) input "mode_${buttonNumber}_doubleTapped", "mode", title: "When Double Tapped", required: false, submitOnChange: collapseAll
@@ -161,7 +163,7 @@ def getButtonSections(buttonNumber) {
                 if(showRelease())input "phrase_${buttonNumber}_released", "enum", title: "When Released", required: false, options: phrases, submitOnChange: collapseAll
 			}
 		}
-        section("Notifications:\nSMS", hideable:true , hidden: !shallHide("notifications_${buttonNumber}")) {
+        section("${getImage("SMS", "36")}Notifications (SMS):        ", hideable:true , hidden: !shallHide("notifications_${buttonNumber}")) {
         paragraph "****************\nPUSHED\n****************"
 			input "notifications_${buttonNumber}_pushed", "text", title: "Message To Send When Pushed:", description: "Enter message to send", required: false, submitOnChange: collapseAll
             input "phone_${buttonNumber}_pushed","phone" ,title: "Send Text To:", description: "Enter phone number", required: false, submitOnChange: collapseAll
@@ -185,23 +187,23 @@ def getButtonSections(buttonNumber) {
 				//input "valNotify${buttonNumber}_released", "bool", title: "Notify in App?", required: false, defaultValue: false, submitOnChange: collapseAll
             }
 		}
-    	section("Notifications:\nAudio/Speech", hideable:true , hidden: !shallHide("speechDevice_${buttonNumber}")) {
+    	section("${getImage("Speech", "36")}Notifications (Speech):    ", hideable:true , hidden: !shallHide("speechDevice_${buttonNumber}")) {
         paragraph "****************\nPUSHED\n****************"
-        	input "speechDevice_${buttonNumber}_pushed","capability.speechSynthesis" ,title: "Send Message To:", description: "Enter Speech Device", required: false, submitOnChange: collapseAll
+        	input "speechDevice_${buttonNumber}_pushed","capability.speechSynthesis" ,title: "Send Message To:", description: "Select Speech Device", required: false, submitOnChange: collapseAll
         	input "speechTxt${buttonNumber}_pushed", "text", title: "Message To Speak When Pushed:", description: "Enter message to speak", required: false, submitOnChange: collapseAll
         	if(showHeld()) {
              	paragraph "\n\n*************\nHELD\n*************"
-			 	input "speechDevice_${buttonNumber}_held", "capability.speechSynthesis", title: "Send Message To:", description: "Enter Speech Device", required: false, submitOnChange: collapseAll
+			 	input "speechDevice_${buttonNumber}_held", "capability.speechSynthesis", title: "Send Message To:", description: "Select Speech Device", required: false, submitOnChange: collapseAll
              	input "speechTxt${buttonNumber}_held", "text", title: "Message To Speak When Held:", description: "Enter message to speak", required: false, submitOnChange: collapseAll
             }
             if(showDouble()) {
             	paragraph "\n\n*************************\nDOUBLE TAPPED\n*************************"
-				input "speechDevice_${buttonNumber}_doubleTapped", "capability.speechSynthesis", title: "Send Message To:", description: "Enter Speech Device", required: false, submitOnChange: collapseAll
+				input "speechDevice_${buttonNumber}_doubleTapped", "capability.speechSynthesis", title: "Send Message To:", description: "Select Speech Device", required: false, submitOnChange: collapseAll
                 input "speechTxt${buttonNumber}_doubleTapped", "text", title: "Message To Speak When Double Tapped:", description: "Enter message to speak", required: false, submitOnChange: collapseAll
             }
             if(showRelease()) {
              	paragraph "\n\n*************\nRELEASED\n*************"
-			 	input "speechDevice_${buttonNumber}_released", "capability.speechSynthesis", title: "Send Message To:", description: "Enter Speech Device", required: false, submitOnChange: collapseAll
+			 	input "speechDevice_${buttonNumber}_released", "capability.speechSynthesis", title: "Send Message To:", description: "Select Speech Device", required: false, submitOnChange: collapseAll
              	input "speechTxt${buttonNumber}_released", "text", title: "Message To Speak When Released:", description: "Enter message to speak", required: false, submitOnChange: collapseAll
             }
 		}       
@@ -216,6 +218,23 @@ def getDevCommands(){
     log.error options
 }
 */
+def getImage(type, mySize) {
+    def loc = "<img src=https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/"
+    if(type.contains("Device")) return "${loc}Device.png height=${mySize} width=${mySize}>   "
+    if(type.contains("Button")) return "${loc}Button.png height=${mySize} width=${mySize}>   "
+    if(type.contains("Switches")) return "${loc}Switches.png height=${mySize} width=${mySize}>   "
+    if(type.contains("Color")) return "${loc}Color.png height=${mySize} width=${mySize}>   "
+    if(type.contains("Dimmers")) return "${loc}Dimmers.png height=${mySize} width=${mySize}>   "
+    if(type.contains("Speakers")) return "${loc}Speakers.png height=${mySize} width=${mySize}>   "
+    if(type.contains("Fans")) return "${loc}Fans.png height=${mySize} width=${mySize}>   "
+    if(type.contains("Other")) return "${loc}Other.png height=${mySize} width=${mySize}>   "
+    if(type.contains("Locks")) return "${loc}Locks.png height=30 width=30>   "
+    if(type.contains("Sirens")) return "${loc}Sirens.png height=30 width=30>   "
+    if(type.contains("Shades")) return "${loc}Shades.png height=30 width=30>   "
+    if(type.contains("Mode")) return "${loc}Mode.png height=30 width=30>   "
+    if(type.contains("SMS")) return "${loc}SMS.png height=30 width=30>   "
+    if(type.contains("Speech")) return "${loc}Audio.png height=30 width=30>   "
+}
 
 def shallHide(myFeature) {
 	if(collapseAll) return (settings["${myFeature}_pushed"]||settings["${myFeature}_held"]||settings["${myFeature}_doubleTapped"]||settings["${myFeature}_released"]||settings["${myFeature}"])
@@ -299,7 +318,9 @@ def updated() {
 
 def initialize() {
     log.debug "INITIALIZED with settings: ${settings}"
-	app.label==app.name?app.updateLabel(defaultLabel()):app.updateLabel(app.label)
+    log.info app.label
+    if(!app.label || app.label == "default")app.updateLabel(defaultLabel())
+	//app.label==app.name?app.updateLabel(defaultLabel()):app.updateLabel(app.label)
 	subscribe(buttonDevice, "pushed", buttonEvent)
 	subscribe(buttonDevice, "held", buttonEvent)
 	subscribe(buttonDevice, "doubleTapped", buttonEvent)
@@ -313,33 +334,36 @@ def defaultLabel() {
 
 def getPrefDetails(){
 	def detailMappings =
-    	[[id:'lightOn_', sOrder:1, desc:'Turn On ', comm:turnOn, type:"normal", secLabel: "Switches (Turn On)", cap: "capability.switch"],
-     	 [id:"lightOff_", sOrder:2, desc:'Turn Off', comm:turnOff, type:"normal", secLabel: "Switches (Turn Off)", cap: "capability.switch"],
+    	[[id:'lightOn_', sOrder:1, desc:'Turn On ', comm:turnOn, type:"normal", secLabel:     "Switches (Turn On)          ", cap: "capability.switch"],
+     	 [id:"lightOff_", sOrder:2, desc:'Turn Off', comm:turnOff, type:"normal", secLabel:   "Switches (Turn Off)          ", cap: "capability.switch"],
          [id:'lights_', sOrder:3, desc:'Toggle On/Off', comm:toggle, type:"normal", secLabel: "Switches (Toggle On/Off)", cap: "capability.switch"],
-         [id:'lightColorTemp_', sOrder:4, desc:'Set Light Color Temp to ', comm:colorSetT, sub:"valColorTemp", subType:"number", type:"hasSub", secLabel: "Switches (Set Color Temp To)", cap: "capability.colorTemperature", sTitle: "Color Temp", sDesc:"2000 to 9000"],
-         [id:'lightColor_', sOrder:5, desc:'Set Light Color (H:', comm:colorSet, sub:"valHue", subType:"number", sub2:"valSat", sub3:"valColor", type:"hasSub", secLabel: "Switches (Set Color To)", cap: "capability.colorControl", sTitle: "Hue", s2Title: "Saturation", s3Title: "Color", sDesc:"0 to 100", s2Desc:"0 to 100", s3Desc:"ColorMap"],
-     	 
-         [id:"lightDim_", sOrder:6, desc:'Dim to ', comm:turnDim, sub:"valLight", subType:"number", type:"hasSub", secLabel: "Dimmers (On to Level - Group 1)", cap: "capability.switchLevel", sTitle: "Bright Level", sDesc:"0 to 100%"],
-     	 [id:"lightD2m_", sOrder:7, desc:'Dim to ', comm:turnDim, sub:"valLight2", subType:"number", type:"hasSub", secLabel: "Dimmers (On to Level - Group 2)", cap: "capability.switchLevel", sTitle: "Bright Level", sDesc:"0 to 100%"],
-         [id:'dimPlus_', sOrder:8, desc:'Brightness +', comm:levelUp, sub:"valDimP", subType:"number", type:"hasSub", secLabel: "Dimmers (Increase Level By)", cap: "capability.switchLevel", sTitle: "Increase by", sDesc:"0 to 15"],
-     	 [id:'dimMinus_', sOrder:9, desc:'Brightness -', comm:levelDown, sub:"valDimM", subType:"number", type:"hasSub", secLabel: "Dimmers (Decrease Level By)", cap: "capability.switchLevel", sTitle: "Decrease by", sDesc:"0 to 15"],
-         [id:'lightsDT_', sOrder:10, desc:'Toggle Off/Dim to ', comm:dimToggle, sub:"valDT", subType:"number", type:"hasSub", secLabel: "Dimmers (Toggle OnToLevel/Off)", cap: "capability.switchLevel", sTitle: "Bright Level", sDesc:"0 to 100%"],
-         [id:'lightsRamp_', sOrder:11, desc:'Ramp ', comm:rampUp, sub:"valDir", subType:"enum", subOpt:['up','down'], type:"hasSub", secLabel: "Dimmers (Ramp Up/Down)", cap: "capability.changeLevel", sTitle: "Ramp Direction (Up/Down)", sDesc:"Up or Down"],
          
+         [id:"lightDim_", sOrder:4, desc:'Dim to ', comm:turnDim, sub:"valLight", subType:"number", type:"hasSub", secLabel: "Dimmers (On to Level - Group 1)", cap: "capability.switchLevel", sTitle: "Bright Level", sDesc:"0 to 100%"],
+     	 [id:"lightD2m_", sOrder:5, desc:'Dim to ', comm:turnDim, sub:"valLight2", subType:"number", type:"hasSub", secLabel: "Dimmers (On to Level - Group 2)", cap: "capability.switchLevel", sTitle: "Bright Level", sDesc:"0 to 100%"],
+         [id:'dimPlus_', sOrder:6, desc:'Brightness +', comm:levelUp, sub:"valDimP", subType:"number", type:"hasSub", secLabel: "Dimmers (Increase Level By)      ", cap: "capability.switchLevel", sTitle: "Increase by", sDesc:"0 to 15"],
+     	 [id:'dimMinus_', sOrder:7, desc:'Brightness -', comm:levelDown, sub:"valDimM", subType:"number", type:"hasSub", secLabel: "Dimmers (Decrease Level By)    ", cap: "capability.switchLevel", sTitle: "Decrease by", sDesc:"0 to 15"],
+         [id:'lightsDT_', sOrder:8, desc:'Toggle Off/Dim to ', comm:dimToggle, sub:"valDT", subType:"number", type:"hasSub", secLabel: "Dimmers (Toggle OnToLevel/Off)", cap: "capability.switchLevel", sTitle: "Bright Level", sDesc:"0 to 100%"],
+         [id:'lightsRamp_', sOrder:9, desc:'Ramp ', comm:rampUp, sub:"valDir", subType:"enum", subOpt:['up','down'], type:"hasSub", secLabel: "Dimmers (Ramp Up/Down)         ", cap: "capability.changeLevel", sTitle: "Ramp Direction (Up/Down)", sDesc:"Up or Down"],
+         
+         [id:'lightColorTemp_', sOrder:10, desc:'Set Light Color Temp to ', comm:colorSetT, sub:"valColorTemp", subType:"number", type:"hasSub", secLabel: "Color Lights (Set Temp To)", cap: "capability.colorTemperature", sTitle: "Color Temp", sDesc:"2000 to 9000"],
+         [id:'lightColor_', sOrder:11, desc:'Set Light Color (H:', comm:colorSet, sub:"valHue", subType:"number", sub2:"valSat", sub3:"valColor", type:"hasSub", secLabel: "Color Lights (Set Color To) ", cap: "capability.colorControl", sTitle: "Hue", s2Title: "Saturation", s3Title: "Color", sDesc:"0 to 100", s2Desc:"0 to 100", s3Desc:"ColorMap"],
+     	          
          [id:"speakerpp_", sOrder:12, desc:'Toggle Play/Pause', comm:speakerplaystate, type:"normal", secLabel: "Speakers (Toggle Play/Pause)", cap: "capability.musicPlayer"],
-     	 [id:'speakervu_', sOrder:13, desc:'Volume +', comm:levelUp, sub:"valSpeakU", subType:"number", type:"hasSub", secLabel: "Speakers (Increase Vol By)", cap: "capability.musicPlayer", sTitle: "Increase by", sDesc:"0 to 15"],
-     	 [id:"speakervd_", sOrder:14, desc:'Volume -', comm:levelDown, sub:"valSpeakD", subType:"number", type:"hasSub", secLabel: "Speakers (Decrease Vol By)", cap: "capability.musicPlayer", sTitle: "Decrease by", sDesc:"0 to 15"],
-         [id:'speakernt_', sOrder:15, desc:'Next Track', comm:speakernexttrack, type:"normal", secLabel: "Speakers (Go to Next Track)", cap: "capability.musicPlayer"],
-    	 [id:'speakermu_', sOrder:16, desc:'Mute', comm:speakermute, type:"normal", secLabel: "Speakers (Toggle Mute/Unmute)", cap: "capability.musicPlayer"],
-         [id:"musicPreset_", sOrder:17, desc:'Cycle Preset', comm:cyclePlaylist, type:"normal", secLabel: "Speaker Preset to Cycle", cap: "capability.switch"],         
+     	 [id:'speakervu_', sOrder:13, desc:'Volume +', comm:levelUp, sub:"valSpeakU", subType:"number", type:"hasSub", secLabel: "Speakers (Increase Vol By)     ", cap: "capability.musicPlayer", sTitle: "Increase by", sDesc:"0 to 15"],
+     	 [id:"speakervd_", sOrder:14, desc:'Volume -', comm:levelDown, sub:"valSpeakD", subType:"number", type:"hasSub", secLabel: "Speakers (Decrease Vol By)   ", cap: "capability.musicPlayer", sTitle: "Decrease by", sDesc:"0 to 15"],
+         [id:'speakernt_', sOrder:15, desc:'Next Track', comm:speakernexttrack, type:"normal", secLabel: "Speakers (Go to Next Track)   ", cap: "capability.musicPlayer"],
+    	 [id:'speakermu_', sOrder:16, desc:'Mute', comm:speakermute, type:"normal", secLabel: "Speakers (Toggle Mute)          ", cap: "capability.musicPlayer"],
+         [id:"musicPreset_", sOrder:17, desc:'Cycle Preset', comm:cyclePlaylist, type:"normal", secLabel: "Speakers Preset to Cycle        ", cap: "capability.switch"],         
          
-         [id:'fanSet_', sOrder:18, desc:'Set Fan to ', comm:setFan, sub:"valSpeed", subType:"enum", subOpt:['off','low','medium-low','medium','high'], type:"hasSub", secLabel: "Fan (Set Speed)", cap: "capability.fanControl", sTitle: "Set Speed to", sDesc:"L/ML/M/H"],
-         [id:"fanCycle_", sOrder:19, desc:'Cycle Fan Speed', comm:cycle, type:"normal", secLabel: "Fans to Cycle Speed", cap: "capability.fanControl"],         
+         [id:'fanSet_', sOrder:18, desc:'Set Fan to ', comm:setFan, sub:"valSpeed", subType:"enum", subOpt:['off','low','medium-low','medium','high'], type:"hasSub", secLabel: "Fans (Set Speed)          ", cap: "capability.fanControl", sTitle: "Set Speed to", sDesc:"L/ML/M/H"],
+         [id:"fanCycle_", sOrder:19, desc:'Cycle Fan Speed', comm:cycle, type:"normal", secLabel: "Fans to Cycle Speed     ", cap: "capability.fanControl"],         
          [id:"fanAdjust_", sOrder:20,desc:'Adjust', comm:adjustFan, type:"normal", secLabel: "Fans to Cycle (Legacy)", cap: "capability.switchLevel"],
-         [id:"shadeAdjust_", sOrder:21,desc:'Adjust', comm:adjustShade, type:"normal", secLabel: "Shades (Adjust - Up, Down, or Stop)", cap: "capability.doorControl"],
          
-         [id:'sirens_', sOrder:22, desc:'Toggle', comm:toggle, type:"normal", secLabel: "Sirens (Toggle)", cap: "capability.alarm"],
-     	 [id:"locks_", sOrder:23, desc:'Lock', comm:setUnlock, type:"normal", secLabel: "Locks (Lock Only)", cap: "capability.lock"],
+         [id:"locks_", sOrder:21, desc:'Lock', comm:setUnlock, type:"normal", secLabel: "Locks (Lock Only)          ", cap: "capability.lock"],
+         
+         [id:"shadeAdjust_", sOrder:22,desc:'Adjust', comm:adjustShade, type:"normal", secLabel: "Shades (Up/Down/Stop)", cap: "capability.doorControl"],
+         [id:'sirens_', sOrder:23, desc:'Toggle', comm:toggle, type:"normal", secLabel: "Sirens (Toggle)               ", cap: "capability.alarm"],
+     	 
      	 
      	// [id:"ccDev_", sOrder:20, desc:'Device to CC ', comm:runCC, sub:"ccCommand", type:"hasSub", secLabel: "Device to run CC on", cap: "capability.switch", sTitle: "Command", sDesc:"0 to 100%"],
      	 
@@ -616,59 +640,4 @@ private hideOptionsSection() {
 
 private timeIntervalLabel() {
 	(starting && ending) ? hhmm(starting) + "-" + hhmm(ending, "h:mm a z") : ""
-}
-
-private def textHelp() {
-	def text =
-	section("User's Guide - Advanced Button Controller") {
-    	paragraph "This smartapp allows you to use a device with buttons including, but not limited to:\n\n  Aeon Labs Minimotes\n"+
-    	"  HomeSeer HS-WD100+ switches**\n  HomeSeer HS-WS100+ switches\n  Lutron Picos***\n\n"+
-		"It is a heavily modified version of @dalec's 'Button Controller Plus' which is in turn"+
-        " a version of @bravenel's 'Button Controller+'."
-   	}
-	section("Some of the included changes are:"){
-        paragraph "A complete revamp of the configuration flow. You can now tell at a glance, what has been configured for each button."+
-        "The button configuration page has been collapsed by default for easier navigation."
-        paragraph "The original apps were hardcoded to allow configuring 4 or 6 button devices."+
-        " This app will automatically detect the number of buttons on your device or allow you to manually"+
-        " specify (only needed if device does not report on its own)."
-		paragraph "Allows you to give your buton device full speaker control including: Play/Pause, NextTrack, Mute, VolumeUp/Down."+
-    	"(***Standard Pico remotes can be converted to Audio Picos)\n\nThe additional control options have been highlighted below."
-	}
-	section("Available Control Options are:"){
-        paragraph "	Switches - Toggle \n"+
-        "	Switches - Turn On \n"+
-        "	Switches - Turn Off \n"+
-        "	Dimmers - Toggle \n"+
-        "	Dimmers - Set Level (Group 1) \n"+
-        "	Dimmers - Set Level (Group 2) \n"+
-        "	*Dimmers - Inc Level \n"+
-        "	*Dimmers - Dec Level \n"+
-        "	Fans - Low, Medium, High, Off \n"+
-        "	Shades - Up, Down, or Stop \n"+
-        "	Locks - Unlock Only \n"+
-        "	Speaker - Play/Pause \n"+
-        "	*Speaker - Next Track \n"+
-        "	*Speaker - Mute/Unmute \n"+
-        "	*Speaker - Volume Up \n"+
-        "	*Speaker - Volume Down \n"+
-        "	Set Modes \n"+
-        "	Run Routines \n"+
-        "	Sirens - Toggle \n"+
-        "	Push Notifications \n"+
-        "	SMS Notifications"
-	}
-	section ("** Quirk for HS-WD100+ on Button 5 & 6:"){
-        paragraph "Because a dimmer switch already uses Press&Hold to manually set the dimming level"+
-        " please be aware of this operational behavior. If you only want to manually change"+
-        " the dim level to the lights that are wired to the switch, you will automatically"+
-        " trigger the 5/6 button event as well. And the same is true in reverse. If you"+ 
-        " only want to trigger a 5/6 button event action with Press&Hold, you will be manually"+
-        " changing the dim level of the switch simultaneously as well.\n"+
-        "This quirk doesn't exist of course with the HS-HS100+ since it is not a dimmer."
-	}
-	section("*** Lutron Pico Requirements:"){
-        paragraph "Lutron Picos are not natively supported by SmartThings. A Lutron SmartBridge Pro, a device running @njschwartz's python script (or node.js) and the Lutron Caseta Service Manager"+
-    	" SmartApp are also required for this functionality!\nSearch the forums for details."
-	}
 }
