@@ -3,7 +3,7 @@
  *
  *	Author: Stephan Hackett
  * 
- *
+ * 7/03/18 - added pictures and Update check
  * 
  */
 
@@ -42,7 +42,7 @@ def mainPage() {
             app(name: "childApps", appName: "ABC Button Mapping", namespace: "stephack", title: "<img src=https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/New.png height=50 width=50>      New Button Device Mapping", multiple: true)
         }
         section("Version Info, User's Guide") {
-       	href (name: "aboutPage", title: "<img src=https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/abc2.png height=80 width=80>   Advanced Button Controller \n"+childVer, 
+            href (name: "aboutPage", title: "${verImgCheck(childVer)}   Advanced Button Controller \n"+childVer, 
        		description: "Tap to get Smartapp Info and User's Guide.",
        		//image: verImgCheck(childVer), required: false, // check repo for image that matches current version. Displays update icon if missing
        		page: "aboutPage"
@@ -51,6 +51,25 @@ def mainPage() {
         //remove("Uninstall ABC App","WARNING!!","This will remove the ENTIRE SmartApp, including all configs listed above.")
         }
     }
+}
+
+def verImgCheck(childVer){
+	def params = [
+    	uri: "https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/abc_${childVer}1.png",
+	]
+	try {
+   		httpGet(params) { resp ->
+        	resp.headers.each {
+           	//log.debug "${it.name} : ${it.value}"
+        	}
+            log.debug "ABC appears to be running the latest Version"
+            log.info params
+            return "<img src=https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/abc_${childVer}.png height=50 width=50>"//params.uri//"<img src=${params.uri} height=80 width=80>"
+    	}
+	} catch (e) {
+    	log.error "ABC does not appear to be the latest version: Please update from IDE"
+    	return "<img src=https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/update.png height=50 width=50>"
+	}
 }
 
 def installed() {
