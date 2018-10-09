@@ -1,0 +1,50 @@
+{
+	"Comment": "Last updated: 09/08/2018",
+
+	"copyright": " &#9400; 2018 YOURNAME",
+
+	"author": "YOURNAME",
+
+	"versions": {
+
+		"Application": {
+
+			"ExampleApp1": "1.3.0",
+			"ExampleApp2": "1.4.0"
+
+
+		},
+
+		"Driver": {
+
+			"ExampleDriver1": "1.8.0",
+			"ExampleDriver2": "1.1.0"
+
+		},
+
+
+		"UpdateInfo": {
+
+			"Application": {
+
+				"ExampleApp1": "<b>Update Information: </b> Updated: 05/08/2018 ",
+				"ExampleApp2": "<b>Update Information: </b> Updated: 08/08/2018 - Fixed typo"
+
+
+			},
+
+
+			"Driver": {
+
+				"ExampleDriver1": "This driver is depreciated - Please upgrade to 'New Driver'",
+				"ExampleDriver2": "Updated: 05/08/2018"
+
+
+			}
+
+
+		}
+
+
+	}
+}
