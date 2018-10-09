@@ -12,25 +12,47 @@
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  *  for the specific language governing permissions and limitations under the License.
  *
- *	
+ *  
+ *  
+ *
+ *
+ *
  */
 
-def version() {"v1.0.20180902"}
+def version() {"v1.0.20181007"}
 
 metadata {
 	definition (name: "Virtual Container", namespace: "stephack", author: "Stephan Hackett") {
         capability "Refresh"
         capability "Switch Level" //stores the current virtual switch - to be used with cycle() method AND can be used with voice control eg Alexa set Bathroonm Presets to 3
         attribute "containerSize", "number"	//stores the total number of child switches created by the container
-    	command "cycle"	//can be called by smartApps to cycle through switches one at a time
-        command "createVirtualSwitch", ["STRING"] //creates a new Virtual Switch with entered label
+    	command "cycle"	//can be called by smartApps to cycle through switches one at a time (3 Types)
+        command "createVirtualDevice", ["NAME", "<span title='${typeHover()}'>TYPE</span>"] //creates a new Virtual Device of the type specified and with entered label
     }
+}
+
+preferences {
+    input ("cycleType", "enum", title: "Select how Cycle/Set Level will function:", defaultValue: 1, options: getCycleOption())
+}
+
+def getCycleOption(){
+ 	def options = [[1:"Disable"],[2:"Turn On Device"],[3:"Turn Off Device"],[4:"Toggle Device"]]   
+}
+  
+def typeHover(){
+    return "Valid Type Options:\n   (case sensitive)\n\n"+
+    	"        Switch\n"+
+        "        Momentary\n"+
+        "        Dimmer\n"+
+        "        Button\n"+
+        "        Presence"
 }
 
 def installed() {
 	log.debug "Installing and configuring Virtual Container"
     sendEvent(name: "level", value: 0)
     state.vsIndex = 0 //stores an index value so that each newly created Virtual Switch has a unique name (simply incremements as each new device is added and attached as a suffix to DNI)
+    initialize()
 }
 
 def initialize() {
@@ -39,19 +61,27 @@ def initialize() {
     updateSize()
 }
 
-def updated() {}
+def updated() {initialize()}
 
 def refresh() {
 	log.debug "Refreshing Container values"
     sendEvent(name: "level", value: 0)
+    updateLabels()
     updateSize()
+    if(!state.vsIndex) state.vsIndex = 0
 }
 
 def setLevel(val) {
     int which = val.toInteger()
 	sendEvent(name:"level", value:which)
     def childDevices = getChildDevices()?.sort{it.label}
-    childDevices[which-1].on()
+    def myComm
+    if(cycleType == "2") myComm = "on"
+    if(cycleType == "3") myComm = "off"
+    if(cycleType == "4" && childDevices[which-1].currentValue("switch") == "on") myComm = "off"
+    if(cycleType == "4" && childDevices[which-1].currentValue("switch") == "off") myComm = "on"
+    if(childDevices[which-1].capabilities.find{it.name=="PushableButton"}) childDevices[which-1].push(1)
+    else if(childDevices[which-1].capabilities.find{it.name=="Switch"}) childDevices[which-1]."${myComm}"()
 }
 
 def updateSize() {
@@ -59,28 +89,50 @@ def updateSize() {
     sendEvent(name:"containerSize", value: mySize)
 }
 
-def createVirtualSwitch(vName){
-	int newIndex = state.vsIndex + 1
-	log.info "Creating Child Switch ${vName}"
-	childDevice = addChildDevice("hubitat", "Virtual Switch", "VS-${device.deviceNetworkId}-${newIndex}", [completedSetup: true, label: "${vName}",
-	isComponent: false, componentName: "${vName}"])
-	state.vsIndex = newIndex
-	childDevice.sendEvent(name:"switch", value: "on")
-    updateSize()
+def createVirtualDevice(vName, vType){
+    state.vsIndex = state.vsIndex + 1	//increment even on invalid device type
+    switch(vType){
+        case ["Switch", "Dimmer", "Button", "Presence"]:
+        	log.info "Creating Virtual ${vType} Device: ${vName}"
+			childDevice = addChildDevice("hubitat", "Virtual ${vType}", "VS-${device.deviceNetworkId}-${state.vsIndex}", [label: "${vName}", isComponent: false])
+    		updateSize()
+        break
+        case ["Momentary"]:
+        	log.info "Creating Virtual Switch Device (with AutoOff): ${vName}"
+			childDevice = addChildDevice("hubitat", "Virtual Switch", "VS-${device.deviceNetworkId}-${state.vsIndex}", [label: "${vName}", isComponent: false])
+            childDevice.updateSetting("autoOff",[type:"enum", value: "500"])
+    		updateSize()
+        break
+		default:
+            log.info "Please choose a valid Device Type [Switch, Momentary, Button, Presence, Dimmer]"
+         break
+    }
 }
 
 def cycle() {			//called by smartApps to cycle through switches one at a time - primarily for Sonos Playlist Control
-	log.info "Cycling to next device"
-    updateSize()
-    int currDev = device.currentValue('level')
-    int totalDevs = device.currentValue('containerSize')
-    int nextDev
-    
-    if(currDev >= totalDevs) {
-    	nextDev = 1
+    if (cycleType?.toInteger() >  1){
+		log.info "Cycling to next device"
+    	updateSize()
+    	int currDev = device.currentValue('level')
+    	int totalDevs = device.currentValue('containerSize')
+    	int nextDev
+    	if(currDev >= totalDevs) {
+    		nextDev = 1
+    	}
+    	else {
+    		nextDev = currDev + 1
+    	}
+    	setLevel(nextDev)
     }
-    else {
-    	nextDev = currDev + 1
+    else{log.info "Cycle has not been enabled on OR is not compatible with this Container."}
+}
+
+def updateLabels() { // syncs device label with componentLabel data value
+    def myChildren = getChildDevices()
+    myChildren.each{
+        log.debug it.data.label
+        if(it.label != it.data.label) {
+            it.updateDataValue("label", it.label)
+        }
     }
-    setLevel(nextDev)
 }
