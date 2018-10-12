@@ -4,7 +4,10 @@
  *
  *	Author: SmartThings, modified by Bruce Ravenel, Dale Coffing, Stephan Hackett
  * 
- * 8/01/18 - added Hubitat Safety Monitor Control (created new MODES section for Set Mode and Set HSM)
+ *
+ *	10/12/18 - adjusted "Set Mode" to comply with mode related updates in firmware 1.1.5
+ *
+ *	8/01/18 - added Hubitat Safety Monitor Control (created new MODES section for Set Mode and Set HSM)
  * 		added level to setColor()
  *		added new detail parameter "myDetail.mul" (Mode and HSM set to multiple:false)
  *		removed section shallHide for sub inputs .... (section will be visible if primary input has a value...sub value no longer checked)
@@ -50,7 +53,7 @@
  *		Switched to parent/child config	
  *		removed button pics and descriptive text (not utilized by hubitat)
  */
-def version(){"v0.2.180801"}
+def version(){"v0.2.181012"}
 
 definition(
     name: "ABC Button Mapping",
@@ -122,10 +125,10 @@ def getButtonSections(buttonNumber) {
 	return {    	
         def myDetail
         section("\n${getImage("Switches", "36")} SWITCHES"){}
-        for(i in 1..25) {//Build 1st 25 Button Config Options
+        for(i in 1..26) {//Build 1st 26 Button Config Options
         	myDetail = getPrefDetails().find{it.sOrder==i}
         	//
-    section(title: getImage(myDetail.secLabel, "10") + myDetail.secLabel, hideable: true, hidden: !(shallHide("${myDetail.id}${buttonNumber}"))) {
+    section(title: getImage(myDetail.secLabel, "12") + myDetail.secLabel, hideable: true, hidden: !(shallHide("${myDetail.id}${buttonNumber}"))) {
 				if(showPush(myDetail.desc)) input "${myDetail.id}${buttonNumber}_pushed", myDetail.cap, title: "When Pushed", multiple: myDetail.mul, required: false, submitOnChange: collapseAll, options: myDetail.opt
 				if(myDetail.sub && isReq("${myDetail.id}${buttonNumber}_pushed")) input "${myDetail.sub}${buttonNumber}_pushed", myDetail.subType, title: myDetail.sTitle, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_pushed"), description: myDetail.sDesc, options: myDetail.subOpt
                 if(myDetail.sub2 && isReq("${myDetail.id}${buttonNumber}_pushed")) input "${myDetail.sub2}${buttonNumber}_pushed", myDetail.subType, title: myDetail.s2Title, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_pushed"), description: myDetail.s2Desc, options: myDetail.subOpt
@@ -147,62 +150,49 @@ def getButtonSections(buttonNumber) {
             if(i==20) section("${getImage("Mode", "36")} MODES"){}
             if(i==22) section("${getImage("Other", "36")} OTHER"){} 
         }
-		/*
-		def phrases = location.helloHome?.getPhrases()*.label
-		if (phrases) {
-        	section("Run Routine", hideable: true, hidden: !shallHide("phrase_${buttonNumber}")) {
-				//log.trace phrases
-				input "phrase_${buttonNumber}_pushed", "enum", title: "When Pushed", required: false, options: phrases, submitOnChange: collapseAll
-				if(showHeld())input "phrase_${buttonNumber}_held", "enum", title: "When Held", required: false, options: phrases, submitOnChange: collapseAll
-                if(showDouble()) input "phrase_${buttonNumber}_doubleTapped", "enum", title: "When Double Tapped", required: false, options: phrases, submitOnChange: collapseAll
-                if(showRelease())input "phrase_${buttonNumber}_released", "enum", title: "When Released", required: false, options: phrases, submitOnChange: collapseAll
-			}
-		}
-        */
+		
         section("${getImage("SMS", "36")}Notifications (SMS):        ", hideable:true , hidden: !shallHide("notifications_${buttonNumber}")) {
-        paragraph "****************\nPUSHED\n****************"
+        //paragraph "*******************\nWHEN PUSHED\n*******************"
 			input "notifications_${buttonNumber}_pushed", "text", title: "Message To Send When Pushed:", description: "Enter message to send", required: false, submitOnChange: collapseAll
             input "phone_${buttonNumber}_pushed","phone" ,title: "Send Text To:", description: "Enter phone number", required: false, submitOnChange: collapseAll
             //input "valNotify${buttonNumber}_pushed","bool" ,title: "Notify in App?", required: false, defaultValue: false, submitOnChange: collapseAll
             if(showHeld()) {
-            	paragraph "\n\n*************\nHELD\n*************"
+            	paragraph "__________________________________"
 				input "notifications_${buttonNumber}_held", "text", title: "Message To Send When Held:", description: "Enter message to send", required: false, submitOnChange: collapseAll
 				input "phone_${buttonNumber}_held", "phone", title: "Send Text To:", description: "Enter phone number", required: false, submitOnChange: collapseAll
 				//input "valNotify${buttonNumber}_held", "bool", title: "Notify in App?", required: false, defaultValue: false, submitOnChange: collapseAll
             }
             if(showDouble()) {
-            	paragraph "\n\n*************************\nDOUBLE TAPPED\n*************************"
+            	paragraph "__________________________________"
 				input "notifications_${buttonNumber}_doubleTapped", "text", title: "Message To Send When Double Tapped:", description: "Enter message to send", required: false, submitOnChange: collapseAll
 				input "phone_${buttonNumber}_doubleTapped", "phone", title: "Send Text To:", description: "Enter phone number", required: false, submitOnChange: collapseAll
 				//if(showDouble())input "valNotify${buttonNumber}_doubleTapped", "bool", title: "Notify in App?", required: false, defaultValue: false, submitOnChange: collapseAll           
             }
             if(showRelease()) {
-            	paragraph "\n\n*************\nRELEASED\n*************"
+            	paragraph "__________________________________"
 				input "notifications_${buttonNumber}_released", "text", title: "Message To Send When Released:", description: "Enter message to send", required: false, submitOnChange: collapseAll
 				input "phone_${buttonNumber}_released", "phone", title: "Send Text To:", description: "Enter phone number", required: false, submitOnChange: collapseAll
 				//input "valNotify${buttonNumber}_released", "bool", title: "Notify in App?", required: false, defaultValue: false, submitOnChange: collapseAll
             }
 		}
-    	section("${getImage("Speech", "36")}Notifications (Speech):    ", hideable:true , hidden: !shallHide("speechDevice_${buttonNumber}")) {
-        paragraph "****************\nPUSHED\n****************"
-        	input "speechDevice_${buttonNumber}_pushed","capability.speechSynthesis" ,title: "Send Message To:", description: "Select Speech Device", required: false, submitOnChange: collapseAll
+    	/*
+        section("${getImage("Speech", "36")}Notifications (Speech):    ", hideable:true , hidden: !shallHide("speechDevice_${buttonNumber}")) {
+        	input "speechDevice_${buttonNumber}_pushed","capability.speechSynthesis" ,title: "When Pushed", description: "Select Speech Device", required: false, submitOnChange: collapseAll
         	input "speechTxt${buttonNumber}_pushed", "text", title: "Message To Speak When Pushed:", description: "Enter message to speak", required: false, submitOnChange: collapseAll
         	if(showHeld()) {
-             	paragraph "\n\n*************\nHELD\n*************"
-			 	input "speechDevice_${buttonNumber}_held", "capability.speechSynthesis", title: "Send Message To:", description: "Select Speech Device", required: false, submitOnChange: collapseAll
+			 	input "speechDevice_${buttonNumber}_held", "capability.speechSynthesis", title: "When Held", description: "Select Speech Device", required: false, submitOnChange: collapseAll
              	input "speechTxt${buttonNumber}_held", "text", title: "Message To Speak When Held:", description: "Enter message to speak", required: false, submitOnChange: collapseAll
             }
             if(showDouble()) {
-            	paragraph "\n\n*************************\nDOUBLE TAPPED\n*************************"
-				input "speechDevice_${buttonNumber}_doubleTapped", "capability.speechSynthesis", title: "Send Message To:", description: "Select Speech Device", required: false, submitOnChange: collapseAll
+				input "speechDevice_${buttonNumber}_doubleTapped", "capability.speechSynthesis", title: "When Double Tapped", description: "Select Speech Device", required: false, submitOnChange: collapseAll
                 input "speechTxt${buttonNumber}_doubleTapped", "text", title: "Message To Speak When Double Tapped:", description: "Enter message to speak", required: false, submitOnChange: collapseAll
             }
             if(showRelease()) {
-             	paragraph "\n\n*************\nRELEASED\n*************"
-			 	input "speechDevice_${buttonNumber}_released", "capability.speechSynthesis", title: "Send Message To:", description: "Select Speech Device", required: false, submitOnChange: collapseAll
+			 	input "speechDevice_${buttonNumber}_released", "capability.speechSynthesis", title: "When Released", description: "Select Speech Device", required: false, submitOnChange: collapseAll
              	input "speechTxt${buttonNumber}_released", "text", title: "Message To Speak When Released:", description: "Enter message to speak", required: false, submitOnChange: collapseAll
             }
 		}       
+        */
 	}
 }
 
@@ -284,7 +274,7 @@ def getDescDetails(bNum, type){
     	def formattedPage =""
     	preferenceNames.each {eachPref->
         	def prefDetail = getPrefDetails().find{eachPref.key.contains(it.id)}	//gets decription of action being performed(eg Turn On)
-        	def prefDevice = " : ${eachPref.value}" - "[" - "]"											//name of device the action is being performed on (eg Bedroom Fan)
+        	def prefDevice = " : ${eachPref.value}" - "[" - "]"						//name of device the action is being performed on (eg Bedroom Fan)
             def prefSubValue = settings[prefDetail.sub + numType]?:"(!Missing!)"
             def sub2Value = settings[prefDetail.sub2 + numType]
             def sub3Value = settings[prefDetail.sub3 + numType]
@@ -308,6 +298,7 @@ def updated() {
 }
 
 def initialize() {
+    //app.clearSetting("fanCycle1_pushed")
     log.debug "INITIALIZED with settings: ${settings}"
     log.info app.label
     if(!app.label || app.label == "default")app.updateLabel(defaultLabel())
@@ -356,11 +347,9 @@ def getPrefDetails(){
          [id:"locks_", sOrder:23, desc:'Lock', comm:setUnlock, type:"normal", secLabel: "Locks (Lock Only)          ", cap: "capability.lock", mul: true],
          [id:"shadeAdjust_", sOrder:24,desc:'Adjust', comm:adjustShade, type:"normal", secLabel: "Shades (Up/Down/Stop)", cap: "capability.doorControl", mul: true],
          [id:'sirens_', sOrder:25, desc:'Toggle', comm:toggle, type:"normal", secLabel: "Sirens (Toggle)               ", cap: "capability.alarm", mul: true],
-     	 
-     	 [id:"phrase_", desc:'Run Routine', comm:runRout, type:"normal"],
+         [id:"speechDevice_", sOrder:26, desc:'Send Msg To', comm:speechHandle, type:"normal", secLabel: "Notifications (Speech):    ", sub:"speechTxt", cap: "capability.speechSynthesis", subType:"text", sTitle: "Message To Speak:", sDesc:"Enter message to speak", mul: true],///set type to normal instead of sub so message text is not displayed
 		 [id:"notifications_", desc:'Send Push Notification', comm:messageHandle, sub:"valNotify", type:"bool"],
      	 [id:"phone_", desc:'Send SMS', comm:smsHandle, sub:"notifications_", type:"normal"],
-         [id:"speechDevice_", desc:'Send Msg To', comm:speechHandle, sub:"speechTxt", type:"normal"],
         ]
     return detailMappings
 }
@@ -551,7 +540,7 @@ def setHSM(hsmMode) {
 
 def changeMode(mode) {
 	log.debug "Changing Mode to: $mode"
-	if (location.mode != mode && location.modes?.find { it.name == mode[0] }) setLocationMode(mode)
+	if (location.mode != mode && location.modes?.find { it.name == mode}) setLocationMode(mode)
 }
 
 def cycle(devices) {
