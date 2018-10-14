@@ -12,14 +12,15 @@
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  *  for the specific language governing permissions and limitations under the License.
  *
- *  
+ *  10/14/18 - template to add 10 more custom device drivers to the createVirtualDevice() method
+ * 			- ValidDeviceTypes state variable created so that all valid types are displayed on container device page for reference
  *  
  *
  *
  *
  */
 
-def version() {"v1.0.20181007"}
+def version() {"v1.0.20181014"}
 
 metadata {
 	definition (name: "Virtual Container", namespace: "stephack", author: "Stephan Hackett") {
@@ -27,7 +28,7 @@ metadata {
         capability "Switch Level" //stores the current virtual switch - to be used with cycle() method AND can be used with voice control eg Alexa set Bathroonm Presets to 3
         attribute "containerSize", "number"	//stores the total number of child switches created by the container
     	command "cycle"	//can be called by smartApps to cycle through switches one at a time (3 Types)
-        command "createVirtualDevice", ["NAME", "<span title='${typeHover()}'>TYPE</span>"] //creates a new Virtual Device of the type specified and with entered label
+        command "createVirtualDevice", ["NAME", "TYPE"] //creates a new Virtual Device of the type specified and with entered label
     }
 }
 
@@ -39,15 +40,6 @@ def getCycleOption(){
  	def options = [[1:"Disable"],[2:"Turn On Device"],[3:"Turn Off Device"],[4:"Toggle Device"]]   
 }
   
-def typeHover(){
-    return "Valid Type Options:\n   (case sensitive)\n\n"+
-    	"        Switch\n"+
-        "        Momentary\n"+
-        "        Dimmer\n"+
-        "        Button\n"+
-        "        Presence"
-}
-
 def installed() {
 	log.debug "Installing and configuring Virtual Container"
     sendEvent(name: "level", value: 0)
@@ -59,6 +51,7 @@ def initialize() {
 	log.debug "Initializing Virtual Container"
     state.version = version()
     updateSize()
+    customDevices() 
 }
 
 def updated() {initialize()}
@@ -68,6 +61,7 @@ def refresh() {
     sendEvent(name: "level", value: 0)
     updateLabels()
     updateSize()
+    customDevices()
     if(!state.vsIndex) state.vsIndex = 0
 }
 
@@ -91,20 +85,24 @@ def updateSize() {
 
 def createVirtualDevice(vName, vType){
     state.vsIndex = state.vsIndex + 1	//increment even on invalid device type
+    customDevices()
     switch(vType){
-        case ["Switch", "Dimmer", "Button", "Presence"]:
+        case builtInTypes():
+        	def newType = vType
+        	if (vType == "Momentary") newType = "Switch"
         	log.info "Creating Virtual ${vType} Device: ${vName}"
-			childDevice = addChildDevice("hubitat", "Virtual ${vType}", "VS-${device.deviceNetworkId}-${state.vsIndex}", [label: "${vName}", isComponent: false])
+			childDevice = addChildDevice("hubitat", "Virtual ${newType}", "VS-${device.deviceNetworkId}-${state.vsIndex}", [label: "${vName}", isComponent: false])
+        	if (vType == "Momentary") childDevice.updateSetting("autoOff",[type:"enum", value: "500"])
     		updateSize()
         break
-        case ["Momentary"]:
-        	log.info "Creating Virtual Switch Device (with AutoOff): ${vName}"
-			childDevice = addChildDevice("hubitat", "Virtual Switch", "VS-${device.deviceNetworkId}-${state.vsIndex}", [label: "${vName}", isComponent: false])
-            childDevice.updateSetting("autoOff",[type:"enum", value: "500"])
+        case customDevices():
+        def devInfo = state.customDevices.find{it.ref == vType}
+        	log.info "Creating Custom Virtual Device (${devInfo.driver}): ${vName}"
+        	childDevice = addChildDevice(devInfo.namespace, devInfo.driver, "VS-${device.deviceNetworkId}-${state.vsIndex}", [label: "${vName}", isComponent: false])
     		updateSize()
         break
-		default:
-            log.info "Please choose a valid Device Type [Switch, Momentary, Button, Presence, Dimmer]"
+        default:
+            log.info "Please choose a valid Device Type: " + state.ValidDeviceTypes
          break
     }
 }
@@ -130,9 +128,40 @@ def cycle() {			//called by smartApps to cycle through switches one at a time - 
 def updateLabels() { // syncs device label with componentLabel data value
     def myChildren = getChildDevices()
     myChildren.each{
-        log.debug it.data.label
+        //log.debug it.data.label
         if(it.label != it.data.label) {
             it.updateDataValue("label", it.label)
         }
     }
+}
+
+def builtInTypes() {
+    return ["Switch", "Momentary", "Dimmer", "Button", "Presence"]
+}
+
+def customDevices(){	//used to easily add custom driver - uncomment each line below as needed and replace with correct values
+    def myMap = []
+    //def custom1 = [namespace:"Enter device namespace here", driver:"Enter Driver Name here", ref:"Enter the label you will use in Create Virtual Device to reference your driver"]
+    //def custom2 = [namespace:"Enter device namespace here", driver:"Enter Driver Name here", ref:"Enter the label you will use in Create Virtual Device to reference your driver"]
+    //def custom3 = [namespace:"Enter device namespace here", driver:"Enter Driver Name here", ref:"Enter the label you will use in Create Virtual Device to reference your driver"]
+    //def custom4 = [namespace:"Enter device namespace here", driver:"Enter Driver Name here", ref:"Enter the label you will use in Create Virtual Device to reference your driver"]
+    //def custom5 = [namespace:"Enter device namespace here", driver:"Enter Driver Name here", ref:"Enter the label you will use in Create Virtual Device to reference your driver"]
+    //def custom6 = [namespace:"Enter device namespace here", driver:"Enter Driver Name here", ref:"Enter the label you will use in Create Virtual Device to reference your driver"]
+    //def custom7 = [namespace:"Enter device namespace here", driver:"Enter Driver Name here", ref:"Enter the label you will use in Create Virtual Device to reference your driver"]
+    //def custom8 = [namespace:"Enter device namespace here", driver:"Enter Driver Name here", ref:"Enter the label you will use in Create Virtual Device to reference your driver"]
+    //def custom9 = [namespace:"Enter device namespace here", driver:"Enter Driver Name here", ref:"Enter the label you will use in Create Virtual Device to reference your driver"]
+    //def custom10 = [namespace:"Enter device namespace here", driver:"Enter Driver Name here", ref:"Enter the label you will use in Create Virtual Device to reference your driver"]
+    if(custom1) myMap << custom1
+    if(custom2) myMap << custom2
+    if(custom3) myMap << custom3
+    if(custom4) myMap << custom4
+    if(custom5) myMap << custom5
+    if(custom6) myMap << custom6
+    if(custom7) myMap << custom7
+    if(custom8) myMap << custom8
+    if(custom9) myMap << custom9
+    if(custom10) myMap << custom10
+    state.customDevices = myMap
+    state.ValidDeviceTypes = builtInTypes() + myMap.ref
+    return myMap.ref
 }
