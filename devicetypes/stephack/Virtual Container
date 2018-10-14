@@ -165,3 +165,5 @@ def customDevices(){	//used to easily add custom driver - uncomment each line be
     state.ValidDeviceTypes = builtInTypes() + myMap.ref
     return myMap.ref
 }
+// sample:
+//def custom1 = [namespace:"stephack", driver:"Virtual Test Driver", ref:"Test"]
