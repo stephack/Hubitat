@@ -1,0 +1,473 @@
+/*	
+ *
+ *	ESPIR Controller
+ *
+ *	Author: Stephan Hackett
+ * 
+ * 
+ */
+
+def version(){"v0.2.181018"}
+
+definition(
+    name: "EspIR Controller2",
+    namespace: "stephack",
+    author: "Stephan Hackett",
+    description: "Configures EspIR devices with codes etc",
+    category: "My Apps",
+    parent: "stephack:EspIR Manager2",
+    iconUrl: "",
+    iconX2Url: "",
+    iconX3Url: "",
+)
+
+preferences {
+	page(name: "configureESP")
+	page(name: "configCommandPage")
+    page(name: "configIRCommand")
+    page(name: "configNewCommand")
+    page(name: "configMacroPage")
+    page(name: "configMacro")
+    page(name: "configNewMacro")
+	
+}
+def isInitial(){
+    if(!state.commIndex) {state.commIndex=0}
+    if(!state.macroIndex) {state.macroIndex=0}
+}
+
+def configureESP() {
+    dynamicPage(name: "configureESP", install: true, uninstall: true) {
+        isInitial()
+		section("Step 1: Configure you EspIR Server:") {
+            input("test2", "button", title: "Run Test2 Code")
+            input("myIp", "text", description: "", title: "${getImage("Device", "50")}EspIR Server IP:", required: true, submitOnChange: true)
+            input("pass", "text", title: "Password:", description: "")
+            input("haveRoku", "bool", title: "Configure Roku?", submitOnChange: true)
+		}
+        if(myIp){
+            if(haveRoku) {section(""){input("rokuIP", "text", title: "Roku's IP address:", submitOnChange: true)}}
+            section("\n\nStep 2: Configure Your IR Commands"){
+                	href "configCommandPage", title: "Configure/Save IR Commands"
+          	}
+        }
+            section("\n\nStep 3: Configure Your IR Macros"){
+                	href "configMacroPage", title: "Configure Macro Commands"
+        }
+        section("Set Custom Name (Optional)") {
+        	label title: "Assign a name:", required: false
+        }
+	}
+}
+
+def configCommandPage() {
+    dynamicPage(name: "configCommandPage", title: "CONFIGURE IR Commands:") {
+     	section(""){
+            int i = 1
+            def commList = settings.findAll{name-> name.key.contains("irLabel")}
+            commList?.each{
+                def index = (it.key - "irLabel").toInteger()
+                href "configIRCommand", title: "${getImage("Button", "20")} Command ${i}", params: [comIndex: index], state: "complete", description: it.value
+            	i++
+            }
+    	}
+        section(" "){
+            href "configNewCommand", title: "${getImage("Button", "20")} Add new command", params: [comIndex: state.commIndex + 1], description:"Tap to configure"
+    }
+    }
+}
+
+def configIRCommand(params) {
+   // log.debug params.comIndex +1
+    dynamicPage(name: "configIRCommand", title: "", getCommandSections(params.comIndex))
+}
+
+def configNewCommand(params) {
+    //log.debug params.comIndex +1
+    //def myDef = getReceivedIR()
+    dynamicPage(name: "configNewCommand", title: "CONFIGURE NEW IR CODE:\n<div style='color:#FF0000'>RED = Last Received IR Signal</div>", getCommandSections(params.comIndex))
+}
+
+def getCommandSections(commNum) {
+    if(commNum > state.commIndex) state.commIndex++
+    return{
+    	section(getFormat("header", "CONFIGURE IR COMMAND")){
+			input("irLabel${commNum}", "text", title: "Name of Command:", description: "Name to give this IR command", required: true)
+        	input("irCommand${commNum}", "text", title: "Command Data:", description: "IR data to send", required: true, submitOnChange: true)
+    	}
+        section(getFormat("header", "TEMPLATES")){
+            paragraph getFormat("results", "Builder Results:", getCommBuildResults())+
+                		getFormat("results", "Last IR Code Received:", getReceivedIR())
+            			//"<div align='center'>(copy and paste into Command Data above)</div>"
+        }
+		section(getFormat("header", "COMMAND BUILDER")){
+			input("irCode", "text", title: "<div title='${getCommDetails('data')}'>Data:</div>", description: "data", submitOnChange: true)
+    		input("irType", "text", title: "<div title='${getCommDetails('type')}'>Type:</div>", description: "type", submitOnChange: true)
+    		input("irLength", "number", title: "<div title='${getCommDetails('length')}'>Length:</div>", description: "length", submitOnChange: true)
+    		input("irPulse", "number", title: "<div title='${getCommDetails('pulse')}'>Pulse:</div>", description: "pulse", submitOnChange: true)
+   			input("irPDdelay", "number", title: "<div title='${getCommDetails('pdelay')}'>Pulse Delay:</div>", description: "pdelay", submitOnChange: true)
+    		input("irRepeat", "number", title: "<div title='${getCommDetails('repeat')}'>Repeat:</div>", description: "repeat", submitOnChange: true)
+    		input("irRDelay", "number", title: "<div title='${getCommDetails('rdelay')}'>Repeat Delay:</div>", description: "rdelay", submitOnChange: true)
+    		input("irKhz", "number", title: "<div title='${getCommDetails('khz')}'>Transmission Freq.:</div>", description: "khz", submitOnChange: true)
+    		input("irOut", "number", title: "<div title='${getCommDetails('out')}'>Output Pin:</div>", description: "out", submitOnChange: true)
+    	}
+    }
+}
+
+def getCommDetails(option){
+    	if(option=="data") return "IR code data, may be simple HEX code such as (A90) or an array of int values when transmitting a RAW sequence."
+        if(option=="type") return "Type of signal transmitted. Example (SONY), (RAW), (Delay) or (Roomba) and many others."
+        if(option=="length") return "(conditional) Bit length, example 12. Parameter does not need to be specified for RAW or Roomba signals."
+        if(option=="pulse") return "(optional) Repeat a signal rapidly. Default 1."
+        if(option=="pdelay") return "(optional) Delay between pulses in milliseconds. Default 100."
+        if(option=="repeat") return "(optional) Number of times to send the signal. Default 1. Useful for emulating multiple button presses for functions like large volume adjustments or sleep timer."
+        if(option=="rdelay") return "(optional) Delay between repeats in milliseconds. Default 1000."
+        if(option=="khz") return "(conditional) Transmission frequency in kilohertz. Default 38. Only required when transmitting RAW signal."
+        if(option=="out") return "(optional) Set which IRsend present output pin to transmit over. Default 1. Choose between 1-4. Corresponding output pins set in the blueprint. Useful for a single ESP8266 that needs multiple LEDs pointed in different directions to trigger different devices."
+}
+
+def getCommBuildResults(){
+    def myMap = "["
+    if(irCode) myMap += "'data':'${irCode}'"
+    //else myMap += "data=MISSING"
+    if(irType) myMap += ", 'type':'${irType}'"
+    if(irLength) myMap += ", 'length':'${irLength}'"
+    if(irPulse) myMap += ", 'pulse':'${irPulse}'"
+    if(irPDdelay) myMap += ", 'pdelay':'${irPDdelay}'"
+    if(irRepeat) myMap += ", 'repeat':'${irRepeat}'"
+    if(irRDelay) myMap += ", 'rdelay':'${irRDelay}'"
+    if(irKhz) myMap += ", 'khz':'${irKhz}'"
+    if(irOut) myMap += ", 'out':'${irOut}'"
+    myMap += "]"
+    log.info myMap
+    return myMap
+    
+}
+
+def configMacroPage() {
+    dynamicPage(name: "configMacroPage", title: "CONFIGURE IR Macro:") {
+        def buildItems = settings.findAll{it.key.startsWith("myMacro")}
+        def allMyMacro = settings.findAll{it.key.startsWith("macroLabel")}
+        log.debug buildItems
+        buildItems.each{
+            app.clearSetting(it.key)   
+        }
+        app.updateSetting("showBuilder",[type:"bool", value:false])
+     	section(""){
+            int i = 1
+            allMyMacro?.each{
+                def index = it.key - "macroLabel"
+            	href "configMacro", title: "${getImage("Button", "20")} Macro ${i}", params: [macroIndex: index], state: "complete", description: it.value
+            	i = i + 1
+            }   
+    	}
+        section(" "){
+            href "configNewMacro", title: "${getImage("Button", "20")} Add new macro", params: [macroIndex: state.macroIndex + 1], description:"Tap to configure"
+    	}
+    }
+}
+
+def configMacro(params) {
+    dynamicPage(name: "configMacro", title: "CONFIGURE Macro ${params.macroIndex}:", getMacroSections(params.macroIndex)) 
+}
+
+def configNewMacro(params) {
+    dynamicPage(name: "configNewMacro", title: "CONFIGURE New Macro ${params.macroIndex}:", getMacroSections(params.macroIndex)) 
+}
+
+def getMacroSections(macroNum) {
+    if(macroNum > state.macroIndex) state.macroIndex = state.macroIndex + 1	//checks to see if this is an existing macro or a new build
+    return{
+    section(getFormat("header", "CONFIGURE")){
+        
+        if(!showBuilder && app."macro${macroNum}") importMacro(macroNum)	//import macro settings to be autofilled in macro builder
+        
+        input("macroLabel${macroNum}", "text", title: "Name of Macro:", description: "Name to give this IR Macro", required: true, submitOnChange: true)
+        input("macro${macroNum}", "text", title: "Macro Data:", description: "", required: true, submitOnChange: true)
+        input("showBuilder", "bool", title: "Show Builder?", submitOnChange: true)
+    }
+    if(myMacroNum) {
+        section(getFormat("header", "TEMPLATE")){
+        	paragraph getFormat("results","Macro Builder Results:",getMacBuildResults(macroNum))
+        }
+    }
+    if(showBuilder){ //displays builder and template using values imported by importMacro()
+        section(getFormat("header", "MACRO BUILDER")){
+            input("importMacro${macroNum}", "button", title: "Import Macro")    
+        	input("myMacroNum", "number", title: "Number of Commands for this Macro:", description: "Number of Commands for this Macro", required: true, submitOnChange: true)
+        	if(myMacroNum){
+            	for(i in 1..myMacroNum){
+                	input("myMacro_${i}", "enum", title: "Command $i:", description: "", options: getMacroOptions(), submitOnChange: true)
+                	if(app."myMacro_${i}"=="Wait(millisecs)"){
+                		input("myMacro_${i}_wait", "number", title: "Milliseconds to wait:", description: "", submitOnChange: true)
+                	}
+                	if(app."myMacro_${i}"=="Roku Command"){
+                    	input("myMacro_${i}_roku", "enum", title: "Choose Roku Command:", description: "", options: getRokuOptions(), submitOnChange: true)
+                	}
+            	}
+        	}
+    	}
+	}
+    section(getFormat("header", "ASSOCIATE VIRTUAL SWITCH")){
+		input("virtSwitch${macroNum}", "capability.switch", title: "Execute this macro using which Switch:", description: "", submitOnChange: true)
+    }
+    }
+}
+
+def getMacBuildResults(index){
+    def virt = app."virtSwitch${index}"?.deviceId
+    if(!virt) virt = "NA"
+    def myMap = "['virtB':'" + virt + "', 'macro':["
+    for(i in 1..myMacroNum){
+        def mm = app."myMacro_${i}"
+        def nn = app."myMacro_${i}_wait"
+        if(mm == "Wait(millisecs)") myMap += "'wait_${nn}', "
+        else if(app."myMacro_${i}") myMap += "'${mm}', "
+    }
+    myMap += "]]"
+    return myMap
+}
+
+def importMacro(index){	//converts macro string to Map and updates values for macro builder
+    num = index
+    def template = evaluate(app."macro${num}")
+    def mySize = template.macro.size()
+    app.updateSetting("myMacroNum",mySize)
+    for(i in 1.. mySize){
+        def g = i - 1
+        log.info i + template.macro[g]
+        if(template.macro[g].startsWith("wait_")){
+            app.updateSetting("myMacro_${i}",[type:"enum", value:"Wait(millisecs)"])
+            app.updateSetting("myMacro_${i}_wait",[type:"number", value:(template.macro[g] - "wait_").toInteger()])
+        }
+        else app.updateSetting("myMacro_${i}",[type:"enum", value:template.macro[g]])
+        
+    }
+}
+
+def getMacroOptions() {
+    def macMap =[]
+    settings.findAll{it.key.contains("irLabel")}.each{name->
+        macMap << name.value
+    }
+    def options = macMap.sort()
+    options << "Wait(millisecs)"
+    options << "Roku Command"
+    return options
+    
+}
+
+def getRokuOptions(){
+    def rokuMap =[:]
+    rokuMap << ["keypress/Home":"Home"]
+    rokuMap << ["keypress/Rev":"Rewind"]
+    rokuMap << ["keypress/Fwd":"FFW"]
+    rokuMap << ["keypress/Play":"Play"]
+    rokuMap << ["keypress/Select":"Select"]
+    rokuMap << ["keypress/Left":"Left"]
+    rokuMap << ["keypress/Right":"Right"]
+    rokuMap << ["keypress/Down":"Down"]
+    rokuMap << ["keypress/Up":"Up"]
+    rokuMap << ["keypress/InstantReplay":"InstantReplay"]
+    rokuMap << ["keypress/Info":"Info"]
+    rokuMap << ["keypress/Backspace":"Backspace"]
+    rokuMap << ["keypress/Search":"Search"]
+    rokuMap << ["keypress/Enter":"Enter"]
+    log.debug rokuMap
+    return rokuMap
+}
+
+def getFormat(type, myText, def myText2=null){
+    if(type=="header") return "\n\n<hr><div align='center' style='font-weight: bold;color:darkblue;text-decoration:underline'>${myText}</div><hr>"
+    if(type=="results") return "\n\n<div align='center'>${myText}</div><div align='center' style='color:red'>${myText2}</div>"
+    
+}
+
+def getImage(type, mySize) {
+    def loc = "<img src=https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/"
+    if(type.contains("Device")) return "${loc}Device.png height=${mySize} width=${mySize}>   "
+    if(type.contains("Button")) return "${loc}Button.png height=${mySize} width=${mySize}>   "
+    if(type.contains("Switches")) return "${loc}Switches.png height=${mySize} width=${mySize}>   "
+    if(type.contains("Color")) return "${loc}Color.png height=${mySize} width=${mySize}>   "
+    if(type.contains("Dimmers")) return "${loc}Dimmers.png height=${mySize} width=${mySize}>   "
+    if(type.contains("Speakers")) return "${loc}Speakers.png height=${mySize} width=${mySize}>   "
+    if(type.contains("Fans")) return "${loc}Fans.png height=${mySize} width=${mySize}>   "
+    if(type.contains("HSM")) return "${loc}Mode.png height=${mySize} width=${mySize}>   "
+    if(type.contains("Mode")) return "${loc}Mode.png height=${mySize} width=${mySize}>   "
+    if(type.contains("Other")) return "${loc}Other.png height=${mySize} width=${mySize}>   "
+    if(type.contains("Locks")) return "${loc}Locks.png height=30 width=30>   "
+    if(type.contains("Sirens")) return "${loc}Sirens.png height=30 width=30>   "
+    if(type.contains("Shades")) return "${loc}Shades.png height=30 width=30>   "
+    if(type.contains("SMS")) return "${loc}SMS.png height=30 width=30>   "
+    if(type.contains("Speech")) return "${loc}Audio.png height=30 width=30>   "
+}
+
+def installed() {
+	initialize()
+}
+
+def updated() {
+	unsubscribe()
+	initialize()
+}
+
+def initialize() {
+    log.debug "INITIALIZED with settings: ${settings}"
+    if(!app.label || app.label == "default")app.updateLabel(defaultLabel())
+    def virts = settings.findAll{it.key.contains("virtSwitch")}
+    virts.each{
+        subscribe(it.value, "switch.on", switchHandler)
+    }
+}
+
+def defaultLabel() {
+	return "${myIp} Controller"
+}
+
+def switchHandler(evt){
+    log.info "${evt.displayName} turned on...sending IR Commands"
+    def virtMacro = settings.find{it.value.toString().startsWith("['virtB':'${evt.deviceId}',")}.value
+    def myComms = evaluate(virtMacro).macro
+    def mapToSend = []
+    myComms.each{
+        if (it.startsWith("wait_")){
+            def myDelay = it - "wait_"
+            mapToSend << [type: "delay", rdelay: myDelay]
+        }
+        else if (it.startsWith("roku_")){
+            def rokuComm = it - "roku_"
+            mapToSend << [data:rokuComm, type:"roku", ip:rokuIP]
+        }
+        else{
+            def i = settings.find{name-> name.key.contains("irLabel") && name.value==it}.key - "irLabel"
+            //log.warn "i " + app."irCommand${i}"
+            def comm = evaluate(app."irCommand${i}") 
+            comm << [simple:1]
+            mapToSend << comm
+        	
+        }
+    }
+    log.info mapToSend
+    sendToServer(mapToSend)
+}
+
+def appButtonHandler(btn) {
+    if(btn=="test2"){
+        test2()
+    }
+    if(btn.contains("importMacro")){
+     	num = btn - "importMacro"
+        log.info "num"+num
+        def macro = evaluate(app."macro${num}")
+        log.info "macro"+macro
+        app.updateSetting("myMacroNum",3)
+        //app.updateSetting("macro${macro}","GGG")//[type:"text",value:"testttt"])
+    }
+}
+
+def test2(){
+	def params = [
+    	uri: "http://192.168.7.243:8060/query/apps",	
+        contentType: "text/xml"
+    ]
+    
+    try {
+        httpGet(params){response ->
+            if(response.status != 200) {
+                log.error "error: ${response.status}."
+            } else {
+                log.debug "Connected to Roku Successfully"
+                log.info response.data
+                response.data.app.each { app ->
+                    log.debug "name: ${app.text()} version: ${app.@version} appid:${app.@id}"
+        		}
+				log.info response.contentType
+            }
+        }
+    } catch (e){
+        log.error "error:${e.getResponse().getData()}"
+    } 
+}
+
+def formMacros(){
+    log.info "Building Macros.."
+    state.savedMacros =  []
+    def allMacros = settings.findAll{it.key.contains("macroLabel")}
+    //log.debug allMacros
+    allMacros.each{
+        def i = it.key - "macroLabel"
+        def myMap = []
+        def thisMacro = [:]
+        
+       // def mySize = app."macro${i}".size
+        if(app."numMacComm${i}"){
+        	for(j in 1..app."numMacComm${i}"){
+            	if (app."myMacro${i}_${j}" == "Wait(millisecs)"){
+                	myMap << "wait_"+app."myMacro${i}_${j}_wait"
+            	}
+                else if (app."myMacro${i}_${j}" == "Roku Command"){
+                	myMap << "roku_"+app."myMacro${i}_${j}_roku"
+            	}
+            	else if (app."myMacro${i}_${j}"){
+                	myMap << app."myMacro${i}_${j}"
+            	}
+        	}
+    	}
+        //log.debug myMap
+        thisMacro << [name:app."macroLabel${i}"]
+        thisMacro << [virtB:app."virtSwitch${i}"?.deviceId]
+        thisMacro << [macro:myMap]
+        thisMacro << [index:i.toInteger()]
+        state.savedMacros << thisMacro        
+    }
+    //log.debug state.savedMacros
+    log.info "Macro build complete."
+}
+
+def getReceivedIR(){
+    //def myMap = [:]
+    def myMap = ""
+    def params = [
+        uri: "http://${myIp}/custom?id=1",
+        contentType: "application/json",
+    ]
+    
+    try {
+    httpGet(params) { resp ->
+        log.debug "IR command data received from EspIR Server"
+        log.debug "response data: ${resp.data}"
+        def myData =  resp.data
+        myMap = "['data':'${myData.data}','type':'${myData.type}','length':'${myData.length}']"
+    	}
+    }
+    catch(e){
+        if(e.getResponse().status == 404) {log.warn "No recent IR commands found. If you recently rebooted, send a new IR command to your IR receiver and refresh this page."}
+        else {log.error "Error: ${e.getResponse().status}"}
+    	//myMap << [data:"--",type:"--",length:"--"]
+        myMap = "[No Recent Commands Found]"
+    }
+        
+    return myMap
+}
+
+def sendToServer(myComm) {
+    log.debug myComm
+    def params = [
+        uri: "http://${myIp}/json",
+		contentType: "application/x-www-form-urlencoded",
+        requestContentType: "application/json",
+        body: myComm
+    ]
+    //log.debug params
+        try {
+            httpPost(params){response ->
+                if(response.status != 200) {
+                    log.error "Received HTTP error ${response.status}."
+                } else {
+                    log.debug "IR Server Received Commands Successfully"
+                }
+            }
+        } catch (e){
+            log.error "error:${e.getResponse().getData()}"
+        }
+}
