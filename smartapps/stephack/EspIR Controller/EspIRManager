@@ -1,0 +1,72 @@
+/*
+ *	EspIR Manager (Parent)
+ *
+ *	Author: Stephan Hackett
+ * 
+ * 
+ * 
+ */
+
+definition(
+    name: "EspIR Manager2",
+    namespace: "stephack",
+    singleInstance: true,
+    author: "Stephan Hackett",
+    description: "Control IR devices with an ESP8266.",
+    category: "My Apps",
+    iconUrl: "",
+    iconX2Url: "",
+    iconX3Url: "",
+)
+
+preferences {
+	page(name: "mainPage")
+}
+
+def mainPage() {
+	return dynamicPage(name: "mainPage", title: "", install: true, uninstall: true) {
+        if(!state.EspIrInstalled) {
+            section("Hit Done to install EspIR App!") {
+        }
+            
+        }
+        else {
+        	section("Create a new IR Controller.") {
+            	app(name: "childApps", appName: "EspIR Controller2", namespace: "stephack", title: "<img src=https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/New.png height=50 width=50>      New EspIR Controller", multiple: true)
+        	}
+        }
+    }
+}
+
+def verImgCheck(childVer){
+	def params = [
+    	uri: "https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/abc_${childVer}.png",
+	]
+	try {
+   		httpGet(params) { resp ->
+        	resp.headers.each {
+           	//log.debug "${it.name} : ${it.value}"
+        	}
+            log.debug "EspIR appears to be running the latest Version"
+            log.info params
+            return "<img src=https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/abc_${childVer}.png height=50 width=50>"//params.uri//"<img src=${params.uri} height=80 width=80>"
+    	}
+	} catch (e) {
+    	log.error "EspIR does not appear to be the latest version: Please update from Github Repo"
+    	return "<img src=https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/update.png height=50 width=50>"
+	}
+}
+
+def installed() {
+    state.EspIrInstalled = true
+	initialize()
+}
+
+def updated() {
+	unsubscribe()
+	initialize()
+}
+
+def initialize() {
+
+}
