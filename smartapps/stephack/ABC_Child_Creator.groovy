@@ -52,8 +52,12 @@
  *2/12/18
  *		Switched to parent/child config	
  *		removed button pics and descriptive text (not utilized by hubitat)
+ *
+ *10/24/18
+ *		added the ability to cycle through Scenes (done using push() command and cycles in alphabetical order only)
+ *		minor GUI updates
  */
-def version(){"v0.2.181012"}
+def version(){"v0.2.181024"}
 
 definition(
     name: "ABC Button Mapping",
@@ -84,6 +88,7 @@ def chooseButton() {
             input "buttonDevice", "capability.pushableButton", title: "${getImage("Device", "50")}Button Device", description: "Tap to Select", multiple: false, required: true, submitOnChange: true
 		}
         if(buttonDevice){
+            //log.info buttonDevice.getSupportedCommands()
         	state.buttonType =  buttonDevice.typeName
             if(state.buttonType.contains("Aeon Minimote")) state.buttonType =  "Aeon Minimote"
             log.debug "Device Type is now set to: "+state.buttonType
@@ -124,11 +129,11 @@ def configButtonsPage(params) {
 def getButtonSections(buttonNumber) {
 	return {    	
         def myDetail
-        section("\n${getImage("Switches", "36")} SWITCHES"){}
-        for(i in 1..26) {//Build 1st 26 Button Config Options
+        section("<div style='color:#ffffff;background-color:#78bf35;text-align:center'>\n${getImage("Switches", "45")} SWITCHES</div>"){}
+        for(i in 1..27) {//Build 1st 26 Button Config Options
         	myDetail = getPrefDetails().find{it.sOrder==i}
         	//
-    section(title: getImage(myDetail.secLabel, "12") + myDetail.secLabel, hideable: true, hidden: !(shallHide("${myDetail.id}${buttonNumber}"))) {
+    section(title: myDetail.secLabel, hideable: true, hidden: !(shallHide("${myDetail.id}${buttonNumber}"))) {
 				if(showPush(myDetail.desc)) input "${myDetail.id}${buttonNumber}_pushed", myDetail.cap, title: "When Pushed", multiple: myDetail.mul, required: false, submitOnChange: collapseAll, options: myDetail.opt
 				if(myDetail.sub && isReq("${myDetail.id}${buttonNumber}_pushed")) input "${myDetail.sub}${buttonNumber}_pushed", myDetail.subType, title: myDetail.sTitle, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_pushed"), description: myDetail.sDesc, options: myDetail.subOpt
                 if(myDetail.sub2 && isReq("${myDetail.id}${buttonNumber}_pushed")) input "${myDetail.sub2}${buttonNumber}_pushed", myDetail.subType, title: myDetail.s2Title, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_pushed"), description: myDetail.s2Desc, options: myDetail.subOpt
@@ -143,33 +148,33 @@ def getButtonSections(buttonNumber) {
         		if(showRelease(myDetail.desc)) input "${myDetail.id}${buttonNumber}_released", myDetail.cap, title: "When Released", multiple: myDetail.mul, required: false, submitOnChange: collapseAll, options: myDetail.opt
                 if(myDetail.sub && isReq("${myDetail.id}${buttonNumber}_released")) input "${myDetail.sub}${buttonNumber}_released", myDetail.subType, title: myDetail.sTitle, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_released"), description: myDetail.sDesc, options: myDetail.subOpt
 			}
-            if(i==3) section("${getImage("Dimmers", "36")} DIMMERS"){}
-            if(i==9) section("${getImage("Color", "36")} COLOR LIGHTS"){}
-            if(i==11) section("${getImage("Speakers", "36")} SPEAKERS"){}
-            if(i==17) section("${getImage("Fans", "36")} FANS"){}
-            if(i==20) section("${getImage("Mode", "36")} MODES"){}
-            if(i==22) section("${getImage("Other", "36")} OTHER"){} 
+            if(i==3) section("\n<div style='color:#ffffff;background-color:#78bf35;text-align:center'>${getImage("Dimmers", "45")} DIMMERS</div>"){}
+            if(i==9) section("\n<div style='color:#ffffff;background-color:#78bf35;text-align:center'>${getImage("Color", "45")} COLOR LIGHTS</div>"){}
+            if(i==11) section("\n<div style='color:#ffffff;background-color:#78bf35;text-align:center'>${getImage("Speakers", "45")} SPEAKERS</div>"){}
+            if(i==17) section("\n<div style='color:#ffffff;background-color:#78bf35;text-align:center'>${getImage("Fans", "45")} FANS</div>"){}
+            if(i==20) section("\n<div style='color:#ffffff;background-color:#78bf35;text-align:center'>${getImage("Mode", "45")} MODES</div>"){}
+            if(i==22) section("\n<div style='color:#ffffff;background-color:#78bf35;text-align:center'>${getImage("Other", "45")} OTHER</div>"){} 
         }
 		
-        section("${getImage("SMS", "36")}Notifications (SMS):        ", hideable:true , hidden: !shallHide("notifications_${buttonNumber}")) {
+        section("Notifications (SMS):", hideable:true , hidden: !shallHide("notifications_${buttonNumber}")) {
         //paragraph "*******************\nWHEN PUSHED\n*******************"
 			input "notifications_${buttonNumber}_pushed", "text", title: "Message To Send When Pushed:", description: "Enter message to send", required: false, submitOnChange: collapseAll
             input "phone_${buttonNumber}_pushed","phone" ,title: "Send Text To:", description: "Enter phone number", required: false, submitOnChange: collapseAll
             //input "valNotify${buttonNumber}_pushed","bool" ,title: "Notify in App?", required: false, defaultValue: false, submitOnChange: collapseAll
             if(showHeld()) {
-            	paragraph "__________________________________"
+            	paragraph "<hr style='background-color:#78bf35; height: 2px; border: 0;'></hr>"
 				input "notifications_${buttonNumber}_held", "text", title: "Message To Send When Held:", description: "Enter message to send", required: false, submitOnChange: collapseAll
 				input "phone_${buttonNumber}_held", "phone", title: "Send Text To:", description: "Enter phone number", required: false, submitOnChange: collapseAll
 				//input "valNotify${buttonNumber}_held", "bool", title: "Notify in App?", required: false, defaultValue: false, submitOnChange: collapseAll
             }
             if(showDouble()) {
-            	paragraph "__________________________________"
+            	paragraph "<hr style='background-color:#78bf35; height: 2px; border: 0;'></hr>"
 				input "notifications_${buttonNumber}_doubleTapped", "text", title: "Message To Send When Double Tapped:", description: "Enter message to send", required: false, submitOnChange: collapseAll
 				input "phone_${buttonNumber}_doubleTapped", "phone", title: "Send Text To:", description: "Enter phone number", required: false, submitOnChange: collapseAll
 				//if(showDouble())input "valNotify${buttonNumber}_doubleTapped", "bool", title: "Notify in App?", required: false, defaultValue: false, submitOnChange: collapseAll           
             }
             if(showRelease()) {
-            	paragraph "__________________________________"
+            	paragraph "<hr style='background-color:#78bf35; height: 2px; border: 0;'></hr>"
 				input "notifications_${buttonNumber}_released", "text", title: "Message To Send When Released:", description: "Enter message to send", required: false, submitOnChange: collapseAll
 				input "phone_${buttonNumber}_released", "phone", title: "Send Text To:", description: "Enter phone number", required: false, submitOnChange: collapseAll
 				//input "valNotify${buttonNumber}_released", "bool", title: "Notify in App?", required: false, defaultValue: false, submitOnChange: collapseAll
@@ -210,6 +215,7 @@ def getImage(type, mySize) {
     if(type.contains("Other")) return "${loc}Other.png height=${mySize} width=${mySize}>   "
     if(type.contains("Locks")) return "${loc}Locks.png height=30 width=30>   "
     if(type.contains("Sirens")) return "${loc}Sirens.png height=30 width=30>   "
+    if(type.contains("Scenes")) return "${loc}Scenes.png height=30 width=30>   "
     if(type.contains("Shades")) return "${loc}Shades.png height=30 width=30>   "
     if(type.contains("SMS")) return "${loc}SMS.png height=30 width=30>   "
     if(type.contains("Speech")) return "${loc}Audio.png height=30 width=30>   "
@@ -298,7 +304,6 @@ def updated() {
 }
 
 def initialize() {
-    //app.clearSetting("fanCycle1_pushed")
     log.debug "INITIALIZED with settings: ${settings}"
     log.info app.label
     if(!app.label || app.label == "default")app.updateLabel(defaultLabel())
@@ -316,39 +321,40 @@ def defaultLabel() {
 
 def getPrefDetails(){
 	def detailMappings =
-    	[[id:'lightOn_', sOrder:1, desc:'Turn On ', comm:turnOn, type:"normal", secLabel:     "Switches (Turn On)          ", cap: "capability.switch", mul: true],
-     	 [id:"lightOff_", sOrder:2, desc:'Turn Off', comm:turnOff, type:"normal", secLabel:   "Switches (Turn Off)          ", cap: "capability.switch", mul: true],
-         [id:'lights_', sOrder:3, desc:'Toggle On/Off', comm:toggle, type:"normal", secLabel: "Switches (Toggle On/Off)", cap: "capability.switch", mul: true],
+    	[[id:'lightOn_', sOrder:1, desc:'Turn On ', comm:turnOn, type:"normal", secLabel: "Turn On", cap: "capability.switch", mul: true],
+     	 [id:"lightOff_", sOrder:2, desc:'Turn Off', comm:turnOff, type:"normal", secLabel: "Turn Off", cap: "capability.switch", mul: true],
+         [id:'lights_', sOrder:3, desc:'Toggle On/Off', comm:toggle, type:"normal", secLabel: "Toggle On/Off", cap: "capability.switch", mul: true],
          
-         [id:"lightDim_", sOrder:4, desc:'Dim to ', comm:turnDim, sub:"valLight", subType:"number", type:"hasSub", secLabel: "Dimmers (On to Level - Group 1)", cap: "capability.switchLevel", sTitle: "Bright Level", sDesc:"0 to 100%", mul: true],
-     	 [id:"lightD2m_", sOrder:5, desc:'Dim to ', comm:turnDim, sub:"valLight2", subType:"number", type:"hasSub", secLabel: "Dimmers (On to Level - Group 2)", cap: "capability.switchLevel", sTitle: "Bright Level", sDesc:"0 to 100%", mul: true],
-         [id:'dimPlus_', sOrder:6, desc:'Brightness +', comm:levelUp, sub:"valDimP", subType:"number", type:"hasSub", secLabel: "Dimmers (Increase Level By)      ", cap: "capability.switchLevel", sTitle: "Increase by", sDesc:"0 to 15", mul: true],
-     	 [id:'dimMinus_', sOrder:7, desc:'Brightness -', comm:levelDown, sub:"valDimM", subType:"number", type:"hasSub", secLabel: "Dimmers (Decrease Level By)    ", cap: "capability.switchLevel", sTitle: "Decrease by", sDesc:"0 to 15", mul: true],
-         [id:'lightsDT_', sOrder:8, desc:'Toggle Off/Dim to ', comm:dimToggle, sub:"valDT", subType:"number", type:"hasSub", secLabel: "Dimmers (Toggle OnToLevel/Off)", cap: "capability.switchLevel", sTitle: "Bright Level", sDesc:"0 to 100%", mul: true],
-         [id:'lightsRamp_', sOrder:9, desc:'Ramp ', comm:rampUp, sub:"valDir", subType:"enum", subOpt:['up','down'], type:"hasSub", secLabel: "Dimmers (Ramp Up/Down)         ", cap: "capability.changeLevel", sTitle: "Ramp Direction (Up/Down)", sDesc:"Up or Down", mul: true],
+         [id:"lightDim_", sOrder:4, desc:'Dim to ', comm:turnDim, sub:"valLight", subType:"number", type:"hasSub", secLabel: "On to Level - Group 1", cap: "capability.switchLevel", sTitle: "Bright Level", sDesc:"0 to 100%", mul: true],
+     	 [id:"lightD2m_", sOrder:5, desc:'Dim to ', comm:turnDim, sub:"valLight2", subType:"number", type:"hasSub", secLabel: "On to Level - Group 2", cap: "capability.switchLevel", sTitle: "Bright Level", sDesc:"0 to 100%", mul: true],
+         [id:'dimPlus_', sOrder:6, desc:'Brightness +', comm:levelUp, sub:"valDimP", subType:"number", type:"hasSub", secLabel: "Increase Level By", cap: "capability.switchLevel", sTitle: "Increase by", sDesc:"0 to 15", mul: true],
+     	 [id:'dimMinus_', sOrder:7, desc:'Brightness -', comm:levelDown, sub:"valDimM", subType:"number", type:"hasSub", secLabel: "Decrease Level By", cap: "capability.switchLevel", sTitle: "Decrease by", sDesc:"0 to 15", mul: true],
+         [id:'lightsDT_', sOrder:8, desc:'Toggle Off/Dim to ', comm:dimToggle, sub:"valDT", subType:"number", type:"hasSub", secLabel: "Toggle OnToLevel/Off", cap: "capability.switchLevel", sTitle: "Bright Level", sDesc:"0 to 100%", mul: true],
+         [id:'lightsRamp_', sOrder:9, desc:'Ramp ', comm:rampUp, sub:"valDir", subType:"enum", subOpt:['up','down'], type:"hasSub", secLabel: "Ramp Up/Down", cap: "capability.changeLevel", sTitle: "Ramp Direction (Up/Down)", sDesc:"Up or Down", mul: true],
          
-         [id:'lightColorTemp_', sOrder:10, desc:'Set Light Color Temp to ', comm:colorSetT, sub:"valColorTemp", subType:"number", type:"hasSub", secLabel: "Color Lights (Set Temp To)", cap: "capability.colorTemperature", sTitle: "Color Temp", sDesc:"2000 to 9000", mul: true],
-         [id:'lightColor_', sOrder:11, desc:'Set Light Color H:', comm:colorSet, sub:"valHue", subType:"number", sub2:"valSat", sub3:"valLvl", type:"hasSub", secLabel: "Color Lights (Set Color To) ", cap: "capability.colorControl", sTitle: "Hue", s2Title: "Saturation", s3Title: "Level", sDesc:"0 to 100", s2Desc:"0 to 100", s3Desc:"0 to 100", mul: true],
+         [id:'lightColorTemp_', sOrder:10, desc:'Set Light Color Temp to ', comm:colorSetT, sub:"valColorTemp", subType:"number", type:"hasSub", secLabel: "Set Temperature", cap: "capability.colorTemperature", sTitle: "Color Temp", sDesc:"2000 to 9000", mul: true],
+         [id:'lightColor_', sOrder:11, desc:'Set Light Color H:', comm:colorSet, sub:"valHue", subType:"number", sub2:"valSat", sub3:"valLvl", type:"hasSub", secLabel: "Set Color", cap: "capability.colorControl", sTitle: "Hue", s2Title: "Saturation", s3Title: "Level", sDesc:"0 to 100", s2Desc:"0 to 100", s3Desc:"0 to 100", mul: true],
      	          
-         [id:"speakerpp_", sOrder:12, desc:'Toggle Play/Pause', comm:speakerplaystate, type:"normal", secLabel: "Speakers (Toggle Play/Pause)", cap: "capability.musicPlayer", mul: true],
-     	 [id:'speakervu_', sOrder:13, desc:'Volume +', comm:levelUp, sub:"valSpeakU", subType:"number", type:"hasSub", secLabel: "Speakers (Increase Vol By)     ", cap: "capability.musicPlayer", sTitle: "Increase by", sDesc:"0 to 15", mul: true],
-     	 [id:"speakervd_", sOrder:14, desc:'Volume -', comm:levelDown, sub:"valSpeakD", subType:"number", type:"hasSub", secLabel: "Speakers (Decrease Vol By)   ", cap: "capability.musicPlayer", sTitle: "Decrease by", sDesc:"0 to 15", mul: true],
-         [id:'speakernt_', sOrder:15, desc:'Next Track', comm:speakernexttrack, type:"normal", secLabel: "Speakers (Go to Next Track)   ", cap: "capability.musicPlayer", mul: true],
-    	 [id:'speakermu_', sOrder:16, desc:'Mute', comm:speakermute, type:"normal", secLabel: "Speakers (Toggle Mute)          ", cap: "capability.musicPlayer", mul: true],
-         [id:"musicPreset_", sOrder:17, desc:'Cycle Preset', comm:cyclePlaylist, type:"normal", secLabel: "Speakers Preset to Cycle        ", cap: "capability.switch", mul: true],         
+         [id:"speakerpp_", sOrder:12, desc:'Toggle Play/Pause', comm:speakerplaystate, type:"normal", secLabel: "Toggle Play/Pause", cap: "capability.musicPlayer", mul: true],
+     	 [id:'speakervu_', sOrder:13, desc:'Volume +', comm:levelUp, sub:"valSpeakU", subType:"number", type:"hasSub", secLabel: "Increase Volume By", cap: "capability.musicPlayer", sTitle: "Increase by", sDesc:"0 to 15", mul: true],
+     	 [id:"speakervd_", sOrder:14, desc:'Volume -', comm:levelDown, sub:"valSpeakD", subType:"number", type:"hasSub", secLabel: "Decrease Volume By", cap: "capability.musicPlayer", sTitle: "Decrease by", sDesc:"0 to 15", mul: true],
+         [id:'speakernt_', sOrder:15, desc:'Next Track', comm:speakernexttrack, type:"normal", secLabel: "Go to Next Track", cap: "capability.musicPlayer", mul: true],
+    	 [id:'speakermu_', sOrder:16, desc:'Mute', comm:speakermute, type:"normal", secLabel: "Speakers Toggle Mute", cap: "capability.musicPlayer", mul: true],
+         [id:"musicPreset_", sOrder:17, desc:'Cycle Preset', comm:cyclePlaylist, type:"normal", secLabel: "Preset to Cycle", cap: "capability.switch", mul: true],         
          
-         [id:'fanSet_', sOrder:18, desc:'Set Fan to ', comm:setFan, sub:"valSpeed", subType:"enum", subOpt:['off','low','medium-low','medium','high'], type:"hasSub", secLabel: "Fans (Set Speed)          ", cap: "capability.fanControl", sTitle: "Set Speed to", sDesc:"L/ML/M/H", mul: true],
-         [id:"fanCycle_", sOrder:19, desc:'Cycle Fan Speed', comm:cycle, type:"normal", secLabel: "Fans to Cycle Speed     ", cap: "capability.fanControl", mul: true],         
-         [id:"fanAdjust_", sOrder:20,desc:'Adjust', comm:adjustFan, type:"normal", secLabel: "Fans to Cycle (Legacy)", cap: "capability.switchLevel", mul: true],
+         [id:'fanSet_', sOrder:18, desc:'Set Fan to ', comm:setFan, sub:"valSpeed", subType:"enum", subOpt:['off','low','medium-low','medium','high'], type:"hasSub", secLabel: "Set Speed", cap: "capability.fanControl", sTitle: "Set Speed to", sDesc:"L/ML/M/H", mul: true],
+         [id:"fanCycle_", sOrder:19, desc:'Cycle Fan Speed', comm:cycleFan, type:"normal", secLabel: "Cycle Speed", cap: "capability.fanControl", mul: true],         
+         [id:"fanAdjust_", sOrder:20,desc:'Adjust', comm:adjustFan, type:"normal", secLabel: "Cycle Speed (Legacy)", cap: "capability.switchLevel", mul: true],
          
-         [id:"mode_", sOrder:21, desc:'Set Mode', comm:changeMode, type:"normal", secLabel: "Set Mode               ", cap: "mode", mul: false],
-     	 [id:"hsm_", sOrder:22, desc:'Set HSM', comm:setHSM, type:"normal", secLabel: "Set HSM               ", cap: "enum", opt:['armAway','armHome','disarm','armRules','disarmRules','disarmAll','armAll','cancelAlerts'], mul: false],
+         [id:"mode_", sOrder:21, desc:'Set Mode', comm:changeMode, type:"normal", secLabel: "Set Mode", cap: "mode", mul: false],
+     	 [id:"hsm_", sOrder:22, desc:'Set HSM', comm:setHSM, type:"normal", secLabel: "Set HSM", cap: "enum", opt:['armAway','armHome','disarm','armRules','disarmRules','disarmAll','armAll','cancelAlerts'], mul: false],
          
-         [id:"locks_", sOrder:23, desc:'Lock', comm:setUnlock, type:"normal", secLabel: "Locks (Lock Only)          ", cap: "capability.lock", mul: true],
+         [id:"locks_", sOrder:23, desc:'Lock', comm:setUnlock, type:"normal", secLabel: "Locks (Lock Only)", cap: "capability.lock", mul: true],
          [id:"shadeAdjust_", sOrder:24,desc:'Adjust', comm:adjustShade, type:"normal", secLabel: "Shades (Up/Down/Stop)", cap: "capability.doorControl", mul: true],
-         [id:'sirens_', sOrder:25, desc:'Toggle', comm:toggle, type:"normal", secLabel: "Sirens (Toggle)               ", cap: "capability.alarm", mul: true],
-         [id:"speechDevice_", sOrder:26, desc:'Send Msg To', comm:speechHandle, type:"normal", secLabel: "Notifications (Speech):    ", sub:"speechTxt", cap: "capability.speechSynthesis", subType:"text", sTitle: "Message To Speak:", sDesc:"Enter message to speak", mul: true],///set type to normal instead of sub so message text is not displayed
-		 [id:"notifications_", desc:'Send Push Notification', comm:messageHandle, sub:"valNotify", type:"bool"],
+         [id:'sirens_', sOrder:25, desc:'Toggle', comm:toggle, type:"normal", secLabel: "Sirens (Toggle)", cap: "capability.alarm", mul: true],
+		 [id:'cycleScenes_', sOrder:26, desc:'Cycle', comm:cycle, type:"normal", secLabel: "Scenes (Cycle)", cap: "device.SceneActivator", mul: true, isCycle: true],
+         [id:"speechDevice_", sOrder:27, desc:'Send Msg To', comm:speechHandle, type:"normal", secLabel: "Notifications (Speech):", sub:"speechTxt", cap: "capability.speechSynthesis", subType:"text", sTitle: "Message To Speak:", sDesc:"Enter message to speak", mul: true],///set type to normal instead of sub so message text is not displayed
+         [id:"notifications_", desc:'Send Push Notification', comm:messageHandle, sub:"valNotify", type:"bool"],
      	 [id:"phone_", desc:'Send SMS', comm:smsHandle, sub:"notifications_", type:"normal"],
         ]
     return detailMappings
@@ -374,9 +380,10 @@ def buttonEvent(evt) {
         	def PrefSubValue = settings["${prefDetail.sub}${buttonNumber}_${pressType}"] //value of subsetting (eg 100)
             def PrefSub2Value = settings["${prefDetail.sub2}${buttonNumber}_${pressType}"] //value of subsetting (eg 100)
             def PrefSub3Value = settings["${prefDetail.sub3}${buttonNumber}_${pressType}"]	//value of subsetting (eg 100)
-        	if(prefDetail.sub3) "$prefDetail.comm"(eachPref.value,PrefSubValue, PrefSub2Value, PrefSub3Value)
+            if(prefDetail.sub3) "$prefDetail.comm"(eachPref.value,PrefSubValue, PrefSub2Value, PrefSub3Value)
             	else if(prefDetail.sub2) "$prefDetail.comm"(eachPref.value,PrefSubValue, PrefSub2Value)
         		else if(prefDetail.sub) "$prefDetail.comm"(eachPref.value,PrefSubValue)
+                else if(prefDetail.isCycle) "$prefDetail.comm"(eachPref.value, "${eachPref.key}")
         	else "$prefDetail.comm"(eachPref.value)
     	}
 	}
@@ -409,7 +416,6 @@ def colorSet(devices,hueVal,satVal,lvlVal) {
     myColor.hue = hueVal.toInteger()
     myColor.saturation = satVal.toInteger()
     myColor.level = lvlVal.toInteger()
-    //log.info myColor
     devices.setColor(myColor)//([hue:hueVal,saturation:satVal,level:50]) 
 }
 
@@ -543,15 +549,22 @@ def changeMode(mode) {
 	if (location.mode != mode && location.modes?.find { it.name == mode}) setLocationMode(mode)
 }
 
-def cycle(devices) {
+def cycleFan(devices) {
     log.debug "Cycling: $devices"
-    log.info devices.currentSpeed
     def mySpeed = devices.currentSpeed
     if(mySpeed[0] == "off") devices.setSpeed(1) 
     if(mySpeed[0] == "low") devices.setSpeed(2) 
     if(mySpeed[0] == "medium-low") devices.setSpeed(3) 
     if(mySpeed[0] == "medium") devices.setSpeed(4)
     if(mySpeed[0] == "high") devices.setSpeed(0) 
+}
+
+def cycle(devices, devIndex) {
+    log.debug "Cycling: $devices"
+    def mySize = devices.size() -1
+    if(!state."${devIndex}" || state."${devIndex}" > mySize) state."${devIndex}" = 0
+    devices[state."${devIndex}"].push()
+    state."${devIndex}" ++
 }
 
 def cyclePlaylist(devices){
@@ -564,7 +577,7 @@ private getAllOk() {
 
 private getModeOk() {
 	def result = !modes || modes.contains(location.mode)
-	log.trace "modeOk = $result"
+	//log.trace "modeOk = $result"
 	result
 }
 
@@ -581,7 +594,7 @@ private getDaysOk() {
 		def day = df.format(new Date())
 		result = days.contains(day)
 	}
-	log.trace "daysOk = $result"
+	//log.trace "daysOk = $result"
 	result
 }
 
@@ -593,7 +606,7 @@ private getTimeOk() {
 		def stop = timeToday(ending).time
 		result = start < stop ? currTime >= start && currTime <= stop : currTime <= stop || currTime >= start
 	}
-	log.trace "timeOk = $result"
+	//log.trace "timeOk = $result"
 	result
 }
 
