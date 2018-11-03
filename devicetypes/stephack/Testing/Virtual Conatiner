@@ -1,0 +1,207 @@
+/**
+ *  Virtual Container
+ *
+ *  Copyright 2018 Stephan Hackett
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License. You may obtain a copy of the License at:
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
+ *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
+ *  for the specific language governing permissions and limitations under the License.
+ *
+ *  10/14/18 - template to add 10 more custom device drivers to the createVirtualDevice() method
+ * 			- ValidDeviceTypes state variable created so that all valid types are displayed on container device page for reference
+ *  
+ *	10/31/18 - old create device command is now quickCreate and createVirtualDevice command now supports any driver type.
+ *
+ *
+ */
+
+def version() {"v1.0.20181031"}
+
+metadata {
+	definition (name: "Virtual Container", namespace: "stephack", author: "Stephan Hackett") {
+        capability "Refresh"
+        capability "Switch Level" //stores the current virtual switch - to be used with cycle() method AND can be used with voice control eg Alexa set Bathroonm Presets to 3
+        attribute "containerSize", "number"	//stores the total number of child switches created by the container
+    	command "cycle"	//can be called by smartApps to cycle through switches one at a time (3 Types)
+        command "quickCreate", ["LABEL", "TYPE"] //creates a new supported Virtual Devices using minimal details
+        command "createVirtualDevice", ["DEVICE LABEL", "DRIVER TYPE ", "NAMESPACE ."] //create any new Virtual Device
+    }
+}
+
+preferences {
+    input ("cycleType", "enum", title: "Select how Cycle/Set Level will function:", defaultValue: 1, options: getCycleOption())
+}
+
+def getCycleOption(){
+ 	def options = [[1:"Disable"],[2:"Turn On Device"],[3:"Turn Off Device"],[4:"Toggle Device"]]   
+}
+  
+def installed() {
+	log.debug "Installing and configuring Virtual Container"
+    sendEvent(name: "level", value: 0)
+    state.vsIndex = 0 //stores an index value so that each newly created Virtual Switch has a unique name (simply incremements as each new device is added and attached as a suffix to DNI)
+    initialize()
+}
+
+def initialize() {
+	log.debug "Initializing Virtual Container"
+    state.version = version()
+    updateSize()
+    customDevices() 
+}
+
+def updated() {initialize()}
+
+def refresh() {
+	log.debug "Refreshing Container values"
+    sendEvent(name: "level", value: 0)
+    updateLabels()
+    updateSize()
+    customDevices()
+    if(!state.vsIndex) state.vsIndex = 0
+    state.version = version()
+}
+
+def setLevel(val) {
+    int which = val.toInteger()
+	sendEvent(name:"level", value:which)
+    def childDevices = getChildDevices()?.sort{it.label}
+    def myComm
+    if(cycleType == "2") myComm = "on"
+    if(cycleType == "3") myComm = "off"
+    if(cycleType == "4" && childDevices[which-1].currentValue("switch") == "on") myComm = "off"
+    if(cycleType == "4" && childDevices[which-1].currentValue("switch") == "off") myComm = "on"
+    if(childDevices[which-1].hasCapability("PushableButton")) childDevices[which-1].push(1)
+    else if(childDevices[which-1].hasCapability("Switch")) childDevices[which-1]."${myComm}"()
+}
+
+def updateSize() {
+	int mySize = getChildDevices().size()
+    sendEvent(name:"containerSize", value: mySize)
+}
+
+def quickCreate(vName, vType){
+    state.vsIndex = state.vsIndex + 1	//increment even on invalid device type
+    customDevices()
+    switch(vType){
+        case builtInTypes():
+        	def newType = vType
+        	if (vType == "Momentary") newType = "Switch"
+        	log.info "Creating Virtual ${vType} Device: ${vName}"
+			childDevice = addChildDevice("hubitat", "Virtual ${newType}", "VS-${device.deviceNetworkId}-${state.vsIndex}", [label: "${vName}", isComponent: false])
+        	if (vType == "Momentary") childDevice.updateSetting("autoOff",[type:"enum", value: "500"])
+    		updateSize()
+        break
+        case customDevices():
+        def devInfo = state.customDevices.find{it.ref == vType}
+        	log.info "Creating Custom Virtual Device (${devInfo.driver}): ${vName}"
+        	childDevice = addChildDevice(devInfo.namespace, devInfo.driver, "VS-${device.deviceNetworkId}-${state.vsIndex}", [label: "${vName}", isComponent: false])
+    		updateSize()
+        break
+        default:
+            log.info "Please choose a valid Device Type: " + state.ValidDeviceTypes
+         break
+    }
+}
+
+def createVirtualDevice(vName, vType, vSpace){
+    try{
+    state.vsIndex = state.vsIndex + 1	//increment even on invalid device type
+    log.info "Attempting to create Virtual Device: Namespace: ${vSpace}, Type: ${vType}, Label: ${vName}"
+	childDevice = addChildDevice(vSpace, vType, "VS-${device.deviceNetworkId}-${state.vsIndex}", [label: "${vName}", isComponent: false])
+    log.debug "Success"
+    updateSize()
+    }
+    catch (Exception e){
+         log.warn "Unable to create device. Please enter a valid driver type!!"
+    }
+}
+
+def cycle() {			//called by smartApps to cycle through switches one at a time - primarily for Sonos Playlist Control
+    if (cycleType?.toInteger() >  1){
+		log.info "Cycling to next device"
+    	updateSize()
+    	int currDev = device.currentValue('level')
+    	int totalDevs = device.currentValue('containerSize')
+    	int nextDev
+    	if(currDev >= totalDevs) {
+    		nextDev = 1
+    	}
+    	else {
+    		nextDev = currDev + 1
+    	}
+    	setLevel(nextDev)
+    }
+    else{log.info "Cycle has not been enabled on OR is not compatible with this Container."}
+}
+
+def updateLabels() { // syncs device label with componentLabel data value
+    def myChildren = getChildDevices()
+    myChildren.each{
+        //log.debug it.data.label
+        if(it.label != it.data.label) {
+            it.updateDataValue("label", it.label)
+        }
+    }
+}
+
+def builtInTypes() {
+    return ["Switch", "Momentary", "Dimmer", "Button", "Presence", "Motion Sensor"]
+}
+
+def customDevices(){	//used to easily add custom driver - uncomment each line below as needed and replace with correct values
+    def myMap = []
+    //def custom1 = [namespace:"Enter device namespace here", driver:"Enter Driver Name here", ref:"Enter the label you will use in Create Virtual Device to reference your driver"]
+    //def custom2 = [namespace:"Enter device namespace here", driver:"Enter Driver Name here", ref:"Enter the label you will use in Create Virtual Device to reference your driver"]
+    //def custom3 = [namespace:"Enter device namespace here", driver:"Enter Driver Name here", ref:"Enter the label you will use in Create Virtual Device to reference your driver"]
+    //def custom4 = [namespace:"Enter device namespace here", driver:"Enter Driver Name here", ref:"Enter the label you will use in Create Virtual Device to reference your driver"]
+    //def custom5 = [namespace:"Enter device namespace here", driver:"Enter Driver Name here", ref:"Enter the label you will use in Create Virtual Device to reference your driver"]
+    //def custom6 = [namespace:"Enter device namespace here", driver:"Enter Driver Name here", ref:"Enter the label you will use in Create Virtual Device to reference your driver"]
+    //def custom7 = [namespace:"Enter device namespace here", driver:"Enter Driver Name here", ref:"Enter the label you will use in Create Virtual Device to reference your driver"]
+    //def custom8 = [namespace:"Enter device namespace here", driver:"Enter Driver Name here", ref:"Enter the label you will use in Create Virtual Device to reference your driver"]
+    //def custom9 = [namespace:"Enter device namespace here", driver:"Enter Driver Name here", ref:"Enter the label you will use in Create Virtual Device to reference your driver"]
+    //def custom10 = [namespace:"Enter device namespace here", driver:"Enter Driver Name here", ref:"Enter the label you will use in Create Virtual Device to reference your driver"]
+    if(custom1) myMap << custom1
+    if(custom2) myMap << custom2
+    if(custom3) myMap << custom3
+    if(custom4) myMap << custom4
+    if(custom5) myMap << custom5
+    if(custom6) myMap << custom6
+    if(custom7) myMap << custom7
+    if(custom8) myMap << custom8
+    if(custom9) myMap << custom9
+    if(custom10) myMap << custom10
+    
+    state.customDevices = myMap
+    state.ValidDeviceTypes = builtInTypes() + myMap.ref
+    return myMap.ref
+}
+// sample:
+//def custom1 = [namespace:"stephack", driver:"Virtual Test Driver", ref:"Test"]
+
+
+
+/********GRAVEYARD
+command "addCustomDriver", ["NAMESPACE _","DRIVER NAME","REFERENCE _"]
+
+def addCustomDriver(namespace, driver, reference){
+    //state.customDevices = []
+    def isThere = state.customDevices.find{it.details.reference == reference}
+    if(isThere) log.warn "A device with this reference name already exists. Please try a new reference."
+    else if(!namespace || !driver || !reference) log.warn "Please fill out all input options and try again."
+    else state.customDevices << ["id":getId(),"details":["namespace":namespace, "driver":driver, "reference":reference]]
+}
+
+
+
+def getId(){
+    if(!state.idIndex) state.idIndex = 0
+    state.idIndex++
+    return state.idIndex
+}
+*/
