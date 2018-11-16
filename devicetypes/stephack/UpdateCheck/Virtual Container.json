@@ -1,6 +1,6 @@
 {
   "currVersion": "1.1.20181115",
-  "updateImg": "<img src=https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/update.png height=20, width=20>",
+  "updateImg": "<img src=https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/update.png height=10, width=10>",
   "noUpdate": "http://stephanhackett.com/test.png",
   "notes": "/nLine 1/nLine2/nLine 3"
 }
