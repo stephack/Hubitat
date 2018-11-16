@@ -1,6 +1,6 @@
 {
   "currVersion": "1.1.20181115",
-  "update": "<img src='https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/update.png' height=50 width=50>",
+  "yesUpdate": "<img src='https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/update.png' height=50 width=50>",
   "noUpdate": "<img src='https://us.123rf.com/450wm/vladwel/vladwel1709/vladwel170900026/85770206-tick-icon-vector-symbol-green-checkmark-isolated-on-white-background-checked-icon-or-correct-choice-.jpg?ver=6' height=50 width=50>",
   "notes": "/nLine 1/nLine2/nLine 3"
 }
