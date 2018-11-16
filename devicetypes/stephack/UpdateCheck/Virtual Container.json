@@ -3,7 +3,7 @@
   "yesUpdate": "<img src=https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/Fans.png height=30 width=30>",
   "updateImg":"<img src='https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/update.png' title='Please Update to latest version.'></a>",
   "noUpdateImg":"<img src='https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/noUpdate.png' title='You are running the lastest version.'>",
-  "notes": "<a>Thisd is a test<br>Test2</a>"
+  "notes": "<a>Thisd is a test<br>This be test  2</a>"
 }
 
 
