@@ -2,4 +2,5 @@
   "currVersion": "1.1.20181115",
   "updateImg": "<img src=https://files.ontario.ca/small-biz-advice.png>",
   "noUpdate": "http://stephanhackett.com/test.png",
+  "notes": "/nLine 1/nLine2/nLine 3"
 }
