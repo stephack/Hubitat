@@ -1,7 +1,7 @@
 {
   "currVersion": "1.1.20181115",
   "yesUpdate": "<img src=https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/Fans.png height=30 width=30>",
-  "update": "<img src=https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/update.png>",
-  "noUpdate": "<img src=https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/noUpdate.png>",
+  "update": "<img src=https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/update.png>Please Update to latest version.</a>",
+  "noUpdate": "<img src=https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/noUpdate.png>You are running the lastest version.</a>",
   "notes": "/nLine 1/nLine2/nLine 3"
 }
