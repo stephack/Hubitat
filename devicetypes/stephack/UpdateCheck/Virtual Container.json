@@ -1,5 +1,5 @@
 {
-  "currVersion": "1.1.20181115",
+  "currVersion": "v1.1.20181115",
   "yesUpdate": "<img src=https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/Fans.png height=30 width=30>",
   "update": "<a href='https://raw.githubusercontent.com/stephack/Hubitat/master/devicetypes/stephack/Virtual%20Container' target='_blank'><img src='https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/update.png' title='Please Update to latest version.'></a>",
   "noUpdate": "<img src='https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/noUpdate.png' title='You are running the lastest version.'>",
