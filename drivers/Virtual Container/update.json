@@ -1,17 +1,16 @@
 {
   "currVersion": "v1.1.20181115",
   
-  "updateImg":
-  "<img src='https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/update.png' title='Please Update to latest version.'></a><small><span style='color:red'> Update Available: <br>",
+  "rawCode":
+  "<small><br><a href='https://raw.githubusercontent.com/stephack/Hubitat/master/devicetypes/stephack/Virtual%20Container' target='_blank'>Raw Code.</a></small>",
   
   "noUpdateImg":
-  "<img src='https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/noUpdate.png' title='You are running the lastest version.'><small><span style='color:green'> Up To Date</span></small>",
+  "<img src='https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/noUpdate.png' title='No Update Needed.'><small><span style='color:green'> Up To Date</span></small>",
   
-  "rawCode":
-  "<small><br><a href=https://raw.githubusercontent.com/stephack/Hubitat/master/devicetypes/stephack/Virtual%20Container target='_blank'>Raw Code.</a></small>",
+   "updateImg":
+  "<img src='https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/update.png' title='Please Update Driver.'></a><small><span style='color:red'> Update Available: ",
   
   "changeLog":
-  "<a href=https://community.hubitat.com/t/release-virtual-container-driver/ target='_blank'>Update Notes</a></span></small>"
-  
+  "<a href='https://community.hubitat.com/t/release-virtual-container-driver/' target='_blank'>Update Notes</a></span></small>"
 }
 
