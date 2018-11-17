@@ -50,7 +50,7 @@ def quickCreate(vName){
 	def thisDev = preloaded("all").find{it.ref == deviceType}
 	log.info "Creating ${thisDev.driver} Device: ${vName}"
 	childDevice = addChildDevice(thisDev.namespace, thisDev.driver, "VS-${device.deviceNetworkId}-${state.vsIndex}", [label: "${vName}", isComponent: false])
-	if (deviceType == "Virtual Momentary/Switch (hubitat)") childDevice.updateSetting("autoOff",[type:"enum", value: "500"])
+	if (deviceType == "Virtual Momentary Switch (hubitat)") childDevice.updateSetting("autoOff",[type:"enum", value: "500"])
 	updateSize()
 }
 
@@ -96,7 +96,6 @@ def refresh() {
 }
 
 def checkForUpdate(){
-	state.DriverLocal = version()
 	def params = [uri: "https://raw.githubusercontent.com/stephack/Hubitat/master/drivers/Virtual%20Container/update.json",
 				   	contentType: "application/json"]
        	try {
@@ -121,7 +120,7 @@ def installed() {
 	log.debug "Installing and configuring Virtual Container"
     sendEvent(name: "level", value: 0)
     state.vsIndex = 0 //stores an index value so that each newly created Virtual Switch has a unique name (simply incremements as each new device is added and attached as a suffix to DNI)
-	device.updateSetting("deviceType",[type:"enum", value: "Virtual Momentary/Switch (hubitat)"])
+	device.updateSetting("deviceType",[type:"enum", value: "Virtual Momentary Switch (hubitat)"])
     //initialize()
 	refresh()
 }
@@ -132,8 +131,8 @@ def updated() {
 
 def initialize() {
 	log.debug "Initializing Virtual Container"
-    state.DriverLocal = version()
-    updateSize()
+    checkForUpdate()
+	updateSize()
 }
 
 def setLevel(val) {
@@ -177,7 +176,7 @@ def getCycleOption(){
 def preloaded(myKey) {
 	def myMap = []
 	myMap << [namespace:"hubitat", driver:"Virtual Switch", ref:"Virtual Switch (hubitat)"]
-	myMap << [namespace:"hubitat", driver:"Virtual Switch", ref:"Virtual Momentary/Switch (hubitat)"]
+	myMap << [namespace:"hubitat", driver:"Virtual Switch", ref:"Virtual Momentary Switch (hubitat)"]
 	myMap << [namespace:"hubitat", driver:"Virtual Dimmer", ref:"Virtual Dimmer (hubitat)"]
 	myMap << [namespace:"hubitat", driver:"Virtual Button", ref:"Virtual Button (hubitat)"]
 	myMap << [namespace:"hubitat", driver:"Virtual Lock", ref:"Virtual Lock (hubitat)"]
