@@ -1,9 +1,17 @@
 {
   "currVersion": "v1.1.20181115",
-  "updateImg":"<img src='https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/update.png' title='Please Update to latest version.'></a><small><span style='color:red'> Update Available: <br>",
-  "noUpdateImg":"<img src='https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/noUpdate.png' title='You are running the lastest version.'><small><span style='color:green'> Up To Date</span></small>",
-  "rawCode":"<small><br><a href=https://raw.githubusercontent.com/stephack/Hubitat/master/devicetypes/stephack/Virtual%20Container target='_blank'>Click Me To View Raw Code.</a></small>",
-  "changeLog":"<a href=https://community.hubitat.com/t/release-virtual-container-driver/ target='_blank'>Click Me for Update Notes</a></span></small>"
+  
+  "updateImg":
+  "<img src=https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/update.png' title='Please Update to latest version.'></a><small><span style='color:red'> Update Available: <br>",
+  
+  "noUpdateImg":
+  "<img src='https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/noUpdate.png' title='You are running the lastest version.'><small><span style='color:green'> Up To Date</span></small>",
+  
+  "rawCode":
+  "<small><br><a href=https://raw.githubusercontent.com/stephack/Hubitat/master/devicetypes/stephack/Virtual%20Container target='_blank'>Raw Code.</a></small>",
+  
+  "changeLog":
+  "<a href=https://community.hubitat.com/t/release-virtual-container-driver/ target='_blank'>Update Notes</a></span></small>"
   
 }
 
