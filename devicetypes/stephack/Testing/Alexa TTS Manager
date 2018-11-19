@@ -40,9 +40,7 @@ preferences {
             input("alexaCookie", "text", required: true)
         }
         section("Please choose your country") {
-            input "alexaCountry", "enum", multiple: false, required: true, options: ["United States":"United States", 
-                                                                                     "Canada":"Canada", 
-                                                                                     "United Kingdom":"United Kingdom"]
+			input "alexaCountry", "enum", multiple: false, required: true, options: getURLs().keySet().collect()
         }
         section("Notification Device") {
             paragraph "Optionally assign a device for error notifications (like when the cookie is invalid)"
@@ -55,10 +53,15 @@ preferences {
     }
     page(name: "pageTwo", title: "Amazon Alexa Device Selection", install: true, uninstall: true) {  
         section("Please select devices to create Alexa TTS child devices for") {
-            input "alexaVC", "bool", title: "Add TTS devices to a Virtual Container?"
-			paragraph "<span style='color:red'>Warning!! Changing the above option will delete any previously created child devices</span>"
 			input "alexaDevices", "enum", multiple: true, required: false, options: getDevices()
         }
+		section("") {
+			paragraph 	"<span style='color:red'>Warning!!\nChanging the option below will delete any previously created child devices!!\n"+
+						"Virtual Container driver v1.1.20181118 or higher must be installed on your hub!!</span>"+
+						"<a href='https://github.com/stephack/Hubitat/blob/master/drivers/Virtual%20Container/Virtual%20Container.groovy' target='_blank'> [driver] </a>"+
+						"<a href='https://community.hubitat.com/t/release-virtual-container-driver/4440' target='_blank'> [notes] </a>"
+			input "alexaVC", "bool", title: "Add Alexa TTS child devices to a Virtual Container?"
+		}
     }
 }
 
