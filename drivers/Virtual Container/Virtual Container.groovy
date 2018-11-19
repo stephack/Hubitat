@@ -22,10 +22,13 @@
  *				- default deviceType is a virtual momentary switch (only virtual device type that cannot be created with the createDevice method)
  *				- added update checking code. Thanks to @Cobra for his guidance on this and the dropdown idea.
  *
+ *	11/18/18	- added appCreateDevice(vName, vType, vSpace, vId) method for use by other smartApps. This method adds an additional parameter 'vId' that allows the smartapp to index all the children in some way.
+ *				- added childComm(devComm, devData, devRef) that allows child devices to communicate back up to the parent smartApp (single parameter only).
+ *				- added childList() to be used by parent smartApps to request a list of all childDevices.
  *
  */
 
-def version() {"v1.1.20181115"}
+def version() {"v1.1.20181118"}
 
 metadata {
 	definition (name: "Virtual Container", namespace: "stephack", author: "Stephan Hackett") {
@@ -45,6 +48,16 @@ preferences {
 	input("includeCobra", "bool", title: "Include Cobra's Custom Drivers?")
 }
 
+def childComm(devComm, devData, devRef){
+	log.info "vchild received info"+devRef
+	parent."${devComm}"(devData,devRef)
+}
+
+def childList(){
+	def children = getChildDevices()
+	return children
+}
+
 def quickCreate(vName){
     state.vsIndex = state.vsIndex + 1	//increment even on invalid device type
 	def thisDev = preloaded("all").find{it.ref == deviceType}
@@ -59,6 +72,19 @@ def createDevice(vName, vType, vSpace){
     	state.vsIndex = state.vsIndex + 1	//increment even on invalid device type
     	log.info "Attempting to create Virtual Device: Namespace: ${vSpace}, Type: ${vType}, Label: ${vName}"
 		childDevice = addChildDevice(vSpace, vType, "VS-${device.deviceNetworkId}-${state.vsIndex}", [label: "${vName}", isComponent: false])
+    	log.debug "Success"
+    	updateSize()
+    }
+    catch (Exception e){
+         log.warn "Unable to create device. Please enter a valid driver type!!"
+    }
+}
+
+def appCreateDevice(vName, vType, vSpace, vId){
+    try{
+    	state.vsIndex = state.vsIndex + 1	//increment even on invalid device type
+    	log.info "Attempting to create Virtual Device: Namespace: ${vSpace}, Type: ${vType}, Label: ${vName}"
+		childDevice = addChildDevice(vSpace, vType, "VS-${device.deviceNetworkId}-${state.vsIndex}", [label: "${vName}", isComponent: false, "vcId": "${vId}"])
     	log.debug "Success"
     	updateSize()
     }
