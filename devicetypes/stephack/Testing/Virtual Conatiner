@@ -33,7 +33,7 @@
  *
  */
 
-def version() {"v1.1.20181120"}
+def version() {"v1.1.20181120-RC"}
 
 metadata {
 	definition (name: "Virtual Container", namespace: "stephack", author: "Stephan Hackett") {
