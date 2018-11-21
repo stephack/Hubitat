@@ -36,45 +36,49 @@ definition(
 
 preferences {
 	page(name: "mainPage")//, nextPage: confirmOptions)
-    page(name: "configPlPage")
+    page(name: "configPage")
 }
 
 def mainPage(){
 	dynamicPage(name:"mainPage",install:true, uninstall:true){
-    	section("Speaker to control with Virtual Playlists") {
-        	input "sonos", "capability.musicPlayer", title: "Choose Speaker", submitOnChange: true, multiple:false, required: true, image: "https://cdn.rawgit.com/stephack/Virtual/master/resources/images/speakera.png"            
+    	section(getFormat("header", "Step 1: Choose your Sonos Speaker")) {
+        	input "sonos", "capability.musicPlayer", title: "Speaker", submitOnChange: true, multiple:false, required: true, image: "https://cdn.rawgit.com/stephack/Virtual/master/resources/images/speakera.png"            
         }
         if(sonos){
-            section("Step 2: Configure Your Playlists"){
-                	href "configPlPage", title: "Configure/Save Playlists"
+            section(getFormat("header", "Step 2: Configure/Edit Your Presets")){
+                	href "configPage", title: "Presets"
           	}
         }
-        section("Set Custom App Name") {
+        section(getFormat("header", "Set Custom App Name")) {
 			label title: "Assign a Custom App Name", required: false
       	}                  
 	}
 }
 
-def configPlPage(){
-    dynamicPage(name: "configPlPage", title: "Configure Presets:") {
-		section(""){input("numPresets", "number", title: "How many presets for ${sonos}?:", submitOnChange: true)}
+def configPage(){
+    dynamicPage(name: "configPage", title: "Configure/Edit Presets:") {
+		section(""){input("numPresets", "number", title: getFormat("section", "How many presets for ${sonos}?:"), submitOnChange: true)}
 			if(numPresets){
 				for(i in 1..numPresets){
-					section("${i}"){
-						input("plLabel${i}", "text", title: "Preset Name:")
-						//input("plSwitch${i}", "capability.switch", title: "Choose a Virtual Switch (Momenatary)")
-						input("uri${i}", "text", title: "URI:")
+					section(getFormat("header", "Preset ${i}")){
+						input("plLabel${i}", "text", title: getFormat("section", "Preset Name:"))
+						input("uri${i}", "text", title: getFormat("section", "URI:"))
 					}
 				}
 			}
-		section(""){input("showRecents", "bool", title: "Show ${sonos}'s Recently Played URI's ?", submitOnChange: true)}
+		section(""){
+			input("showRecents", "bool", title: "Show ${sonos}'s Recently Played URI's ?", submitOnChange: true)
+			input("testUri", "text", title: getFormat("section", "Test URI on ${sonos}"), description: "Paste uri and click Test:", submitOnChange: true)
+			input("testPlay", "button", title: "Test")
+		}
+		
 		if(showRecents){
 			section(getFormat("header","Recently Played URI's")){
 				if(state.recents) {
 					def i=1
 					state.recents.each{
 						//if(it.type == "Radio Stream") log.debug "tt"
-						paragraph getFormat("centerBold", "${i}. Station Type=${it.type}\n${it.name}\n") + getFormat("hlight", "${it.uri}")
+						paragraph getFormat("centerBold", "${i}. Station Type=${it.type}\n${it.name}\n") + getFormat("hlightBlue", "${it.uri}")
 						i++
 					}
 				}
@@ -198,7 +202,7 @@ def getImage(type, mySize) {
     def loc = "<img src=https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/"
     if(type == "Device") return "${loc}Device.png height=${mySize} width=${mySize}>   "
     if(type == "Button") return "${loc}Button.png height=${mySize} width=${mySize}>   "
-    if(type == "Switches") return "${loc}Switches.png height=${mySize} width=${mySize}>   "
+    if(type == "Preset") return "${loc}preset.png height=${mySize} width=${mySize}>   "
     if(type == "Color") return "${loc}Color.png height=${mySize} width=${mySize}>   "
     if(type == "Dimmers") return "${loc}Dimmers.png height=${mySize} width=${mySize}>   "
     if(type == "Speakers") return "${loc}Speakers.png height=${mySize} width=${mySize}>   "
@@ -218,7 +222,9 @@ def getImage(type, mySize) {
 
 def getFormat(type, myText=""){
     if(type == "section") return "<div style='color:#78bf35;font-weight: bold'>${myText}</div>"
-    if(type == "hlight") return "<div style='color:#78bf35'>${myText}</div>"
+    if(type == "hlight") return "<div style='color:#78bf35; word-wrap:break-word'>${myText}</div>"
+	if(type == "hlightRed") return "<div style='color:red; word-wrap:break-word'>${myText}</div>"
+	if(type == "hlightBlue") return "<div style='color:blue; word-wrap:break-word'>${myText}</div>"
     if(type == "header") return "<div style='color:#ffffff;background-color:#392F2E;text-align:center'>${myText}</div>"
     if(type == "redhead") return "<div style='color:#ffffff;background-color:red;text-align:center'>${myText}</div>"
     if(type == "line") return "\n<hr style='background-color:#78bf35; height: 2px; border: 0;'></hr>"
@@ -235,8 +241,8 @@ def appButtonHandler(btn) {
 }
 
 def testPlay(){
-    if(sonos && uri){
-        sonos.playTrack(uri)
+    if(sonos && testUri){
+        sonos.playTrack(testUri)
     }
 }
 
