@@ -1,0 +1,128 @@
+/**
+ *  Sonos Preset Control for Hubitat
+ *
+ *  Copyright 2017 Stephan Hackett
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License. You may obtain a copy of the License at:
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
+ *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
+ *  for the specific language governing permissions and limitations under the License.
+ *
+ *	 
+ *
+ *		
+ *
+ */
+
+def version() {return "0.1.20181120"}
+
+definition(
+    name: "Sonos Preset Control",
+    namespace: "stephack",
+    author: "Stephan Hackett",
+    description: "Autoplay Stations/Playlists on Sonos speakers",
+    category: "My Apps",
+    iconUrl: "https://cdn.rawgit.com/stephack/Virtual/master/resources/images/spca.png",
+    iconX2Url: "https://cdn.rawgit.com/stephack/Virtual/master/resources/images/spca.png",
+    iconX3Url: "https://cdn.rawgit.com/stephack/SPC/Virtual/resources/images/spca.png"
+)
+
+preferences {
+	page(name: "mainPage")
+    page(name: "aboutPage")
+}
+
+def mainPage() {
+	return dynamicPage(name: "mainPage", title: "", install: true, uninstall: true) {
+        if(!state.parentInstalled){
+            section("Hit Done to install SPC App!") {
+        	}
+        }
+        else{
+        	section(getFormat("header", "Installed Preset Controllers")) {
+            	app(name: "childApps", appName: "Sonos Preset Control Child", namespace: "stephack", title: "Create New Preset Controller", multiple: true)
+        	}
+        	section(getFormat("header", "Version Info & User's Guide")) {
+       			href (name: "aboutPage", 
+       			title: "Sonos Preset Control\nver "+version(), 
+       			description: "Tap for User's Guide and Info.",
+       			image: "https://cdn.rawgit.com/stephack/Virtual/master/resources/images/spca.png",
+       			required: false,
+       			page: "aboutPage"
+ 	   			)
+      		}
+        }
+    }
+}
+
+def installed() {
+	log.debug "Installed with settings: ${settings}"
+    state.parentInstalled = true
+    initialize()    
+}
+
+def updated() {
+	log.debug "Updated with settings: ${settings}"
+    initialize()
+}
+
+def initialize() {
+	log.debug "Parent Initialized"
+}
+
+////////////FORMATTING CODE//////////////////////
+def getImage(type, mySize) {
+    def loc = "<img src=https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/"
+    if(type == "Device") return "${loc}Device.png height=${mySize} width=${mySize}>   "
+    if(type == "Button") return "${loc}Button.png height=${mySize} width=${mySize}>   "
+    if(type == "Switches") return "${loc}Switches.png height=${mySize} width=${mySize}>   "
+    if(type == "Color") return "${loc}Color.png height=${mySize} width=${mySize}>   "
+    if(type == "Dimmers") return "${loc}Dimmers.png height=${mySize} width=${mySize}>   "
+    if(type == "Speakers") return "${loc}Speakers.png height=${mySize} width=${mySize}>   "
+    if(type == "Fans") return "${loc}Fans.png height=${mySize} width=${mySize}>   "
+    if(type == "HSM") return "${loc}Mode.png height=${mySize} width=${mySize}>   "
+    if(type == "Mode") return "${loc}Mode.png height=${mySize} width=${mySize}>   "
+    if(type == "Other") return "${loc}Other.png height=${mySize} width=${mySize}>   "
+    if(type == "Custom") return "${loc}Custom.png height=${mySize} width=${mySize}>   "
+    if(type == "Locks") return "${loc}Locks.png height=30 width=30>   "
+    if(type == "Sirens") return "${loc}Sirens.png height=30 width=30>   "
+    if(type == "Scenes") return "${loc}Scenes.png height=30 width=30>   "
+    if(type == "Shades") return "${loc}Shades.png height=30 width=30>   "
+    if(type == "SMS") return "${loc}SMS.png height=30 width=30>   "
+    if(type == "Speech") return "${loc}Audio.png height=30 width=30>   "
+	if(type == "New") return "${loc}New.png height=30 width=30>   "
+}
+
+def getFormat(type, myText=""){
+    if(type == "section") return "<div style='color:#78bf35;font-weight: bold'>${myText}</div>"
+    if(type == "hlight") return "<div style='color:#78bf35'>${myText}</div>"
+    if(type == "header") return "<div style='color:#ffffff;background-color:#392F2E;text-align:center'>${myText}</div>"
+    if(type == "redhead") return "<div style='color:#ffffff;background-color:red;text-align:center'>${myText}</div>"
+    if(type == "line") return "\n<hr style='background-color:#78bf35; height: 2px; border: 0;'></hr>"
+    if(type == "centerBold") return "<div style='font-weight:bold;text-align:center'>${myText}</div>"	
+	
+}
+////////////FORMATTING CODE//////////////////////
+
+
+
+def aboutPage() {
+	dynamicPage(name: "aboutPage", title: none) {
+     	section(getFormat("centerBold", "User's Guide: Sonos Preset Control")) {
+        	paragraph "This smartApp allows you to create momentary switches that turn on a Sonos speaker and automatically start playing a preconfigured station or playlist."+
+				"They can exposed to Alexa or Google Home devices and used as voice commands."
+        }
+        section(getFormat("centerBold", "Best Practices:")){
+        	paragraph "You should set your Presets name to the voice command you would use to start playback of a particular station. eg 'Jazz in the Dining Room'\n"+
+			"<div style='text-align:center'>Voice Command - 'Alexa, turn on [Jazz in the Dining Room]'</div>\n\n"+
+            "Your Virtual Container should be named for easy voice control as well. eg 'Bathroom Presets'.\n"+
+			"<div style='text-align:center'>Voice Command - 'Alexa, set Bathroom presets to 1'</div>"+
+			"<div style='text-align:center'>This will start the playlist with ID=1</div>"
+            
+ 		}
+	}
+}
