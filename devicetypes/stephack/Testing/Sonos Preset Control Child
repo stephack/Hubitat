@@ -20,7 +20,7 @@
  *
  */
 
-def version() {return "0.1.20181106"}
+def version() {return "0.1.20181121"}
 
 definition(
     name: "Sonos Preset Control Child",
@@ -57,8 +57,8 @@ def mainPage(){
 
 def configPage(){
     dynamicPage(name: "configPage", title: "Configure/Edit Presets:") {
-		section(""){input("numPresets", "number", title: getFormat("section", "How many presets for ${sonos}?:"), submitOnChange: true)}
-			if(numPresets){
+		section(""){input("numPresets", "number", title: getFormat("section", "How many presets for ${sonos}?:</div><small>(6 max)</small></div>"), submitOnChange: true, range: "1..6")}
+			if(numPresets && numPresets <= 6){
 				for(i in 1..numPresets){
 					section(getFormat("header", "Preset ${i}")){
 						input("plLabel${i}", "text", title: getFormat("section", "Preset Name:"))
@@ -187,8 +187,10 @@ def createPresets() {
 		}
 		else {
 			log.info "Creating SPC Child Device: " + "SPC${i}"
+			def childLabel = app."plLabel${i}"
+			if(app."plLabel${i}" == null) childLabel = "Preset ${i}"
 			try{
-				container.appCreateDevice(app."plLabel${i}", "Virtual Momentary Switch (hubitat)", "hubitat", "SPC${i}")
+				container.appCreateDevice(childLabel, "Virtual Momentary Switch (hubitat)", "hubitat", "SPC${i}")
 			}
 			catch (e) {
 				log.error "Child device creation failed with error = ${e}"
