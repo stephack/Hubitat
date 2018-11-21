@@ -1,0 +1,333 @@
+/**
+ *  Sonos Preset Control Child Creator
+ *
+ *  Copyright 2017 Stephan Hackett
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License. You may obtain a copy of the License at:
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
+ *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
+ *  for the specific language governing permissions and limitations under the License.
+ *
+ *	 
+ * 
+ * 
+ *
+ *		
+ *
+ */
+
+def version() {return "0.1.20181106"}
+
+definition(
+    name: "Sonos Preset Control Child",
+    namespace: "stephack",
+    author: "Stephan Hackett",
+    description: "Autoplay Stations/Playlists on Sonos speakers",
+    category: "My Apps",
+    parent: "stephack:Sonos Preset Control",
+    iconUrl: "https://cdn.rawgit.com/stephack/Virtual/master/resources/images/spca.png",
+    iconX2Url: "https://cdn.rawgit.com/stephack/Virtual/master/resources/images/spca.png",
+    iconX3Url: "https://cdn.rawgit.com/stephack/SPC/Virtual/resources/images/spca.png"
+)
+
+preferences {
+	page(name: "mainPage")//, nextPage: confirmOptions)
+    page(name: "configPlPage")
+}
+
+def mainPage(){
+	dynamicPage(name:"mainPage",install:true, uninstall:true){
+    	section("Speaker to control with Virtual Playlists") {
+        	input "sonos", "capability.musicPlayer", title: "Choose Speaker", submitOnChange: true, multiple:false, required: true, image: "https://cdn.rawgit.com/stephack/Virtual/master/resources/images/speakera.png"            
+        }
+        if(sonos){
+            section("Step 2: Configure Your Playlists"){
+                	href "configPlPage", title: "Configure/Save Playlists"
+          	}
+        }
+        section("Set Custom App Name") {
+			label title: "Assign a Custom App Name", required: false
+      	}                  
+	}
+}
+
+def configPlPage(){
+    dynamicPage(name: "configPlPage", title: "Configure Presets:") {
+		section(""){input("numPresets", "number", title: "How many presets for ${sonos}?:", submitOnChange: true)}
+			if(numPresets){
+				for(i in 1..numPresets){
+					section("${i}"){
+						input("plLabel${i}", "text", title: "Preset Name:")
+						//input("plSwitch${i}", "capability.switch", title: "Choose a Virtual Switch (Momenatary)")
+						input("uri${i}", "text", title: "URI:")
+					}
+				}
+			}
+		section(""){input("showRecents", "bool", title: "Show ${sonos}'s Recently Played URI's ?", submitOnChange: true)}
+		if(showRecents){
+			section(getFormat("header","Recently Played URI's")){
+				if(state.recents) {
+					def i=1
+					state.recents.each{
+						//if(it.type == "Radio Stream") log.debug "tt"
+						paragraph getFormat("centerBold", "${i}. Station Type=${it.type}\n${it.name}\n") + getFormat("hlight", "${it.uri}")
+						i++
+					}
+				}
+				input("getRecents", "button", title: "Refresh Recent List")
+			}
+		}
+	}
+}
+
+def getRecents(){
+    def states = sonos.statesSince("trackData", new Date(0), [max:30]).value
+    def recentData = []
+    states?.each{
+		def myName
+		def myUri
+        def info = toJson(it)
+		myName = info.station
+		if(info.metaData && info.metaData != "null"){
+			if(!info.station){
+				def preStation = info.metaData?.replaceAll(".*<dc:title>", "")
+				def postStation = preStation.split("<")[0]-"&apos;"
+				myName = postStation
+			}
+			//if("${info.audioSource}" == "Radio Stream") myUri = info.uri
+			//else myUri = info.transportUri
+			recentData << ["name":myName, "uri":info.uri, "type":info.audioSource]//, "meta":postStation]
+			}
+    }
+    state.recents = recentData.unique()
+}
+
+def installed() {
+	log.debug "Installed with settings: ${settings}"
+    initialize()
+}
+
+def updated() {
+	log.debug "Updated with settings: ${settings}"
+  	unsubscribe()
+    initialize()
+}
+
+def initialize() {
+	unsubscribe()
+    state.PLmap = []
+	for(i in 1..2) {
+		state.PLmap << ["id": "SPC${i}", "name": app."plLabel${i}", "uri": app."uri${i}"]
+		
+	}
+	createContainer()
+	createPresets()
+	def container = getChildDevices().find{it.typeName == "Virtual Container"}
+    def vChildren = container.childList()
+	vChildren.each{
+		subscribe(it, "switch.on", switchHandler)
+	}
+    
+	app.label==app.name?app.updateLabel(defaultLabel()):app.updateLabel(app.label)	
+    //if(!state.savedPL) state.savedPL = []
+    //if(state.savedPList==null){state.savedPList=[]} 
+    log.debug "Initialization Complete"
+}
+
+def switchHandler(evt){
+	def myId = evt.device.data.vcId
+    def uri = state.PLmap.find{it.id == myId}.uri
+    sonos.playTrack(uri)//playStation(uri)
+}
+
+def defaultLabel() {
+	return "${sonos}"-"Sonos"+" Presets"
+}
+
+def createContainer() {
+	log.info "Creating Virtual Container"
+	def container = getChildDevices().find{it.typeName == "Virtual Container"}
+          
+    if (!container) {
+    	log.info "Creating Sonos Preset Container"
+		try {
+			container = addChildDevice("stephack", "Virtual Container", "SonosPreset${app.id}", null, [name: "${app.label} Container", label: "${app.label} Container", completedSetup: true]) 
+		} catch (e) {
+			log.error "Container device creation failed with error = ${e}"
+		}
+		log.info "Container successfully created."
+		
+	}
+    else {
+    	container.label = "${app.label} Container"
+        container.name = "${app.label} Container"
+        log.info "Container renamed to [${app.label} Container]"
+	}
+}
+
+def createPresets() {
+	log.info "Creating Presets"
+	def container = getChildDevices().find{it.typeName == "Virtual Container"}
+	def vChildren = container.childList()
+	
+	for(i in 1..numPresets){
+		def myPreset = vChildren.find{it.data.vcId == "SPC${i}"}
+		if(myPreset){
+			log.info "${i}" + " already exists...skipping"
+			log.info "renaming as needed"
+			myPreset.label = app."plLabel${i}"
+		}
+		else {
+			log.info "Creating SPC Child Device: " + "SPC${i}"
+			try{
+				container.appCreateDevice(app."plLabel${i}", "Virtual Momentary Switch (hubitat)", "hubitat", "SPC${i}")
+			}
+			catch (e) {
+				log.error "Child device creation failed with error = ${e}"
+			}
+		}
+	}
+}
+
+////////////FORMATTING CODE//////////////////////
+def getImage(type, mySize) {
+    def loc = "<img src=https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/"
+    if(type == "Device") return "${loc}Device.png height=${mySize} width=${mySize}>   "
+    if(type == "Button") return "${loc}Button.png height=${mySize} width=${mySize}>   "
+    if(type == "Switches") return "${loc}Switches.png height=${mySize} width=${mySize}>   "
+    if(type == "Color") return "${loc}Color.png height=${mySize} width=${mySize}>   "
+    if(type == "Dimmers") return "${loc}Dimmers.png height=${mySize} width=${mySize}>   "
+    if(type == "Speakers") return "${loc}Speakers.png height=${mySize} width=${mySize}>   "
+    if(type == "Fans") return "${loc}Fans.png height=${mySize} width=${mySize}>   "
+    if(type == "HSM") return "${loc}Mode.png height=${mySize} width=${mySize}>   "
+    if(type == "Mode") return "${loc}Mode.png height=${mySize} width=${mySize}>   "
+    if(type == "Other") return "${loc}Other.png height=${mySize} width=${mySize}>   "
+    if(type == "Custom") return "${loc}Custom.png height=${mySize} width=${mySize}>   "
+    if(type == "Locks") return "${loc}Locks.png height=30 width=30>   "
+    if(type == "Sirens") return "${loc}Sirens.png height=30 width=30>   "
+    if(type == "Scenes") return "${loc}Scenes.png height=30 width=30>   "
+    if(type == "Shades") return "${loc}Shades.png height=30 width=30>   "
+    if(type == "SMS") return "${loc}SMS.png height=30 width=30>   "
+    if(type == "Speech") return "${loc}Audio.png height=30 width=30>   "
+	if(type == "New") return "${loc}New.png height=30 width=30>   "
+}
+
+def getFormat(type, myText=""){
+    if(type == "section") return "<div style='color:#78bf35;font-weight: bold'>${myText}</div>"
+    if(type == "hlight") return "<div style='color:#78bf35'>${myText}</div>"
+    if(type == "header") return "<div style='color:#ffffff;background-color:#392F2E;text-align:center'>${myText}</div>"
+    if(type == "redhead") return "<div style='color:#ffffff;background-color:red;text-align:center'>${myText}</div>"
+    if(type == "line") return "\n<hr style='background-color:#78bf35; height: 2px; border: 0;'></hr>"
+    if(type == "centerBold") return "<div style='font-weight:bold;text-align:center'>${myText}</div>"	
+	
+}
+////////////FORMATTING CODE//////////////////////
+
+//////////BUTTON CODE////////////////////////////
+def appButtonHandler(btn) {
+    if(btn=="testPlay"){testPlay()}
+    if(btn=="getRecents"){getRecents()}
+    
+}
+
+def testPlay(){
+    if(sonos && uri){
+        sonos.playTrack(uri)
+    }
+}
+
+//////////BUTTON CODE////////////////////////////
+
+def stationSelections(){	//retrieves recently played stations from sonos speaker and presents as options when choosing station in VPLs
+    def newOptions= []// = state.savedPList.findAll()//{it.selected==true}	//ensures previously selected stations are included in the new list
+    //log.error newOptions
+    def states = sonos.statesSince("trackData", new Date(0), [max:15]) //??gets all previously played tracks from sonos speaker
+    //log.info states
+    
+    states?.each{	//for each track in the fresh list
+        def stationName
+        def stationData = toJson(it.value)
+        log.info stationData
+        if(stationData.metaData && stationData.metaData != "null"){
+            //log.debug "meta:"+stationData.metaData
+            if(stationData.station && stationData.station != "null") {
+                stationName = stationData.station
+            	//log.debug "station:"+stationData.station
+            	//log.debug "stationName:"+stationName
+			}
+            else{
+        		def preStation = stationData.metaData.replaceAll(".*<dc:title>", "")
+        		//log.debug preStation
+            	def postStation = preStation.split("<")[0]-"&apos;"
+        		stationName = postStation
+               // log.debug "stationName:"+stationName
+        	}
+        
+        	//log.debug stationName
+        	//log.debug stationData.transportUri
+        
+        
+            
+        	if(stationName && !newOptions.find{fav->fav.station==stationName}){ //checks whether previously selected tracks(newOptions) exist in the new list and prevents adding second entry
+   				newOptions << [uri:stationData.transportUri,station:stationName]
+        	}
+    	}
+    }
+    def options = newOptions.collect{it.station}.sort()
+    log.info newOptions
+    log.info options
+    state.savedPList = newOptions
+	return options
+}
+
+def savePlaylistsToState(){	//stores all the stations selected by the VPLs in savedPList state
+	log.info "Saving Playlist info"
+    def newStationList = []
+    for(i in 1..vbTotal){
+        def placeHold = app."tracks${i}"
+    	if(placeHold){
+        	newStationList << state.savedPList.find{it.station==placeHold} // add each selected station to savedPList state
+        }
+   	}
+    state.savedPList = newStationList
+}
+
+def selectPlaylist(pList){	//receives playlist request from VPL and finds detailed track info stored in savedPList state
+  	def myStations = state.savedPList
+    if(myStations.size==0){
+		log.debug "No Saved Playlists/Stations Found"
+    }
+    else{ 
+    	def stationToPlay = myStations.find{stationToPlay->stationToPlay.station==pList}
+    	playStation(stationToPlay)
+    }    
+}
+
+def isPlaylistOrAlbum(trackData){ //determines type of playlist/station and formats properly for playback
+	trackData.uri.startsWith('x-rincon-cpcontainer') ? true : false
+}
+
+def playStation(trackData){	//sends formatted play command to Sonos speaker
+    if(isPlaylistOrAlbum(trackData)){
+		log.debug "Working around some sonos device handler playlist wierdness ${trackData.station}. This seems to work"
+        trackData.transportUri=trackData.uri
+        trackData.enqueuedUri="savedqueues"
+        trackData.trackNumber="1"
+        sonos.setTrack(trackData)
+        pause(1500)
+        sonos.play()
+    }
+    else{
+        log.info "sdfsdf"
+    	sonos.playTrack(trackData.uri)
+    }
+}
+
+def toJson(str){
+    def slurper = new groovy.json.JsonSlurper()
+    def json = slurper.parseText(str)
+}
