@@ -26,9 +26,14 @@
  *				- added childComm(devComm, devData, devRef) that allows child devices to communicate back up to the parent smartApp (single parameter only).
  *				- added childList() to be used by parent smartApps to request a list of all childDevices.
  *
+ *	11/20/18	- cleaned up refresh/initialize code
+ *				- pointed update check to new location
+ *				- added Virtual Momentry to appCreateDevice()
+ *
+ *
  */
 
-def version() {"v1.1.20181118"}
+def version() {"v1.1.20181120"}
 
 metadata {
 	definition (name: "Virtual Container", namespace: "stephack", author: "Stephan Hackett") {
@@ -46,6 +51,7 @@ preferences {
     input("cycleType", "enum", title: "Select how Cycle/Set Level will function:", defaultValue: 1, options: getCycleOption())
 	input("deviceType", "enum", title: "Quick Create Device Template", options: preloaded("ref"))
 	input("includeCobra", "bool", title: "Include Cobra's Custom Drivers?")
+	//input("schedUpdates", "bool", title: "Schedule Update Checks?<div><small>Wednesday's @ 4AM</small></div>")
 }
 
 def childComm(devComm, devData, devRef){
@@ -81,10 +87,16 @@ def createDevice(vName, vType, vSpace){
 }
 
 def appCreateDevice(vName, vType, vSpace, vId){
+	def isMomentary = false
+	if(vType == "Virtual Momentary Switch (hubitat)"){
+		isMomentary = true
+		vType = "Virtual Switch"
+	}
     try{
     	state.vsIndex = state.vsIndex + 1	//increment even on invalid device type
     	log.info "Attempting to create Virtual Device: Namespace: ${vSpace}, Type: ${vType}, Label: ${vName}"
 		childDevice = addChildDevice(vSpace, vType, "VS-${device.deviceNetworkId}-${state.vsIndex}", [label: "${vName}", isComponent: false, "vcId": "${vId}"])
+		if (isMomentary) childDevice.updateSetting("autoOff",[type:"enum", value: "500"])
     	log.debug "Success"
     	updateSize()
     }
@@ -111,19 +123,9 @@ def cycle() {			//called by smartApps to cycle through switches one at a time - 
     else{log.info "Cycle has not been enabled on OR is not compatible with this Container."}
 }
 
-def refresh() {
-	log.debug "Refreshing Container values"
-    sendEvent(name: "level", value: 0)
-    updateLabels()
-    updateSize()
-	clearUnused()
-    if(!state.vsIndex) state.vsIndex = 0
-    checkForUpdate()
-}
-
 def checkForUpdate(){
-	def params = [uri: "https://raw.githubusercontent.com/stephack/Hubitat/master/drivers/Virtual%20Container/update.json",
-				   	contentType: "application/json"]
+	def params = [uri: "http://stephanhackett.com/drivers/vContainer.json",//"https://raw.githubusercontent.com/stephack/Hubitat/master/drivers/Virtual%20Container/update.json",
+				  contentType: "application/json"]
        	try {
 			httpGet(params) { response ->
 				def results = response.data
@@ -144,10 +146,7 @@ def checkForUpdate(){
 
 def installed() {
 	log.debug "Installing and configuring Virtual Container"
-    sendEvent(name: "level", value: 0)
-    state.vsIndex = 0 //stores an index value so that each newly created Virtual Switch has a unique name (simply incremements as each new device is added and attached as a suffix to DNI)
 	device.updateSetting("deviceType",[type:"enum", value: "Virtual Momentary Switch (hubitat)"])
-    //initialize()
 	refresh()
 }
 
@@ -156,9 +155,20 @@ def updated() {
 }
 
 def initialize() {
-	log.debug "Initializing Virtual Container"
-    checkForUpdate()
+	//log.debug "Initializing Virtual Container"
+	if(!state.vsIndex) state.vsIndex = 0	//stores an index value so that each newly created Virtual Switch has a unique name (simply incremements as each new device is added and attached as a suffix to DNI)
+	//unschedule()
 	updateSize()
+	updateLabels()
+	checkForUpdate()
+	clearUnused()
+	//if(schedUpdates) schedule("0 0 4 ? * WED *", checkForUpdate)
+}
+
+def refresh() {
+	log.debug "Refreshing Container values"
+    sendEvent(name: "level", value: 0)
+	initialize()
 }
 
 def setLevel(val) {
