@@ -124,7 +124,7 @@ def updated() {
 def initialize() {
 	unsubscribe()
     state.PLmap = []
-	for(i in 1..2) {
+	for(i in 1..6) {
 		state.PLmap << ["id": "SPC${i}", "name": app."plLabel${i}", "uri": app."uri${i}"]
 		
 	}
