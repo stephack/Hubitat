@@ -2,6 +2,7 @@
  *  Almond Click Button
  *
  *  Copyright 2017 Gene Eilebrecht
+ *  Edited by Stephan Hackett for HE and a couple of improvements (ghost event handling + parse improvements)
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -21,6 +22,7 @@ metadata {
 		capability "PushableButton"
 		capability "HoldableButton"
         capability "DoubleTapableButton"
+        
         command "configure"
         command "push", ["number"]
         
@@ -87,3 +89,6 @@ def initialize() {
 def configure() {
 	sendEvent(name: "numberOfButtons", value: 1)
 }
+def push(button){
+    sendEvent(name: "pushed", value: button)
+    }
