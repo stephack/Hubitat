@@ -14,12 +14,17 @@
  *
  *	Icons by http://www.icons8.com	
  *	
+ * 06/25/18 - changed cycleChild command to cycle
+ *
  */
+def version() {"v1.0.20180625"}
 
 metadata {
 	definition (name: "Virtual Container", namespace: "stephack", author: "Stephan Hackett") {
 	capability "Switch"
 	capability "Switch Level"
+        capability "Refresh"
+    
     
     attribute "noVS", "number"	//stores the total number of child switches created by the container
     
@@ -27,34 +32,19 @@ metadata {
     	attribute "vlabel${i}", "string"
     }
 	
-    command "cycleChild"	//can be called by smartApps to cycle through switches one at a time
+    command "cycle"	//can be called by smartApps to cycle through switches one at a time
     
     }
 
-	tiles(scale: 2) {	        
-        def tileList = []
-        for(i in 1..6){
-        	tileList << "vIcon${i}".toString()
-            tileList << "vlabel${i}".toString()
-        	tileList << "vs${i}".toString()
-            standardTile("vIcon${i}","vlabel${i}",height: 1, width: 2){
-        		state "vIcon", label: "", icon: "https://cdn.rawgit.com/stephack/Virtual/master/resources/images/${i}a.png"
-        		state "--", label: "", icon: "https://cdn.rawgit.com/stephack/Virtual/master/resources/images/notset.png"
-        	}
-        	valueTile("vlabel${i}","vlabel${i}",height: 1, width: 3){
-                state "${i}", label: '${currentValue}'//, icon: "https://cdn.rawgit.com/stephack/Virtual/master/resources/images/b${i}.png"
-        		state "--", label: "--"//, icon: "https://cdn.rawgit.com/stephack/Virtual/master/resources/images/notset.png"
-        	}
-        	childDeviceTile("vs${i}", "VS-${i}", height: 1, width: 1)
-        }
-        valueTile("noVS","noVS"){		//for display on main things page
-        	state "default", label: '${currentValue}', icon: "https://cdn.rawgit.com/stephack/Virtual/master/resources/images/container5.png"
-        }
-       // childDeviceTiles("all", height: 1, width: 2)
-        
-		main "noVS"
-		details(tileList)
-	}
+	
+}
+
+def refresh(){
+	log.info refresh
+    def childDevices = getChildDevices()
+    childDevices.each{
+    	log.info it.updateSetting("test",[type:"enum", value: "2"])
+    }
 }
 
 def on() {
@@ -90,7 +80,7 @@ def childLevel(val, whichChild){
     parent.containerLevel(val, whichChild)
 }
 
-def cycleChild() {			//called by smartApps to cycle through switches one at a time
+def cycle() {			//called by smartApps to cycle through switches one at a time
 	log.info "Cycling to next device: $which"
     int currDev = device.currentValue('level')
     int totalDevs = device.currentValue('noVS')
@@ -115,11 +105,11 @@ def createChildVB(newTotal,vDetails, vType) {			//creates child Momentary switch
     for(i in 1..newTotal){
     	def vName = vDetails.find{it.id==i}?.name
         
-        def childDevice = getChildDevices()?.find {it.componentName == "VS-${i}"}
+        def childDevice = getChildDevices()?.find {it.data.componentName == "VS-${i}"}
         if (!childDevice) {
            	log.info "Creating VS ${i}:${vName}"
-        	childDevice = addChildDevice("Virtual $vType", "VS_${parent.app.id} ${i}", null,[completedSetup: true,
-            label: "${vName}", name: "${vName}", isComponent: true, componentName: "VS-${i}", componentLabel: "Virtual Switch ${i}"])
+            log.debug parent.id
+        	childDevice = addChildDevice("stephack", "Virtual $vType", "VS_${parent.id} ${i}", [label: "${vName}", name: "${vName}", isComponent: true, componentName: "VS-${i}", componentLabel: "Virtual Switch ${i}"])
             childDevice.sendEvent(name: "buttonNo", value: i)
             childDevice.sendEvent(name:"switch", value: "off")
             childDevice.sendEvent(name:"conLabel", value: device.label)
@@ -148,15 +138,22 @@ def deleteChildVB(which) {		//deletes specified child Momentary...or All childre
     sendEvent(name:"vlabel${which}", value: "--")
 }
 
-def updated(){
-	parent.updateLabel(device.label)
+def installed() {
+ 	initialize()
+}
+
+def updated() {
+    parent.updateLabel(device.label)
     def childDevice = getChildDevices()
     childDevice.each {child->
   		child.sendEvent(name:"conLabel", value: device.label)          
     }
+ 	initialize()
 }
 
-
+def initialize() {
+    state.version = version()
+}
 /*****TEMPLATE FOR SMARTAPPS THAT USE THESE HANDLERS*******************************************************************************************
 
 preferences {
