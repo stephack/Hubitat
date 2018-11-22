@@ -1,2 +1,0 @@
-# Harmony Commander
-User Guide
