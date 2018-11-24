@@ -20,7 +20,7 @@
  *
  */
 
-def version() {return "0.1.20181106"}
+def version() {return "0.1.20181124"}
 
 definition(
     name: "Sonos Preset Control Child",
@@ -57,12 +57,13 @@ def mainPage(){
 
 def configPage(){
     dynamicPage(name: "configPage", title: "Configure/Edit Presets:") {
-		section(""){input("numPresets", "number", title: getFormat("section", "How many presets for ${sonos}?:"), submitOnChange: true)}
+		section(""){input("numPresets", "number", title: getFormat("section", "How many presets for ${sonos}? (6 Max):"), submitOnChange: true, range: "1..6")}
 			if(numPresets){
 				for(i in 1..numPresets){
 					section(getFormat("header", "Preset ${i}")){
 						input("plLabel${i}", "text", title: getFormat("section", "Preset Name:"))
 						input("uri${i}", "text", title: getFormat("section", "URI:"))
+						input("volume${i}", "number", title: "Set Volume (optional)", range: "1..100")
 					}
 				}
 			}
@@ -124,8 +125,8 @@ def updated() {
 def initialize() {
 	unsubscribe()
     state.PLmap = []
-	for(i in 1..6) {
-		state.PLmap << ["id": "SPC${i}", "name": app."plLabel${i}", "uri": app."uri${i}"]
+	for(i in 1..numPresets) {
+		state.PLmap << ["id": "SPC${i}", "name": app."plLabel${i}", "uri": app."uri${i}", "volume": app."volume${i}"]
 		
 	}
 	createContainer()
@@ -135,16 +136,22 @@ def initialize() {
 	vChildren.each{
 		subscribe(it, "switch.on", switchHandler)
 	}
-    
-	app.label==app.name?app.updateLabel(defaultLabel()):app.updateLabel(app.label)	
+    if(!app.label || app.label == "default")app.updateLabel(defaultLabel())
+	//app.label==app.name?app.updateLabel(defaultLabel()):app.updateLabel(app.label)	
     //if(!state.savedPL) state.savedPL = []
     //if(state.savedPList==null){state.savedPList=[]} 
     log.debug "Initialization Complete"
 }
 
+def uninstalled() {
+    childDevices.each{deleteChildDevice(it.deviceNetworkId)}
+}
+
 def switchHandler(evt){
 	def myId = evt.device.data.vcId
     def uri = state.PLmap.find{it.id == myId}.uri
+	def vol = state.PLmap.find{it.id == myId}.volume
+	if(vol) sonos.setLevel(vol)
     sonos.playTrack(uri)//playStation(uri)
 }
 
@@ -159,7 +166,10 @@ def createContainer() {
     if (!container) {
     	log.info "Creating Sonos Preset Container"
 		try {
-			container = addChildDevice("stephack", "Virtual Container", "SonosPreset${app.id}", null, [name: "${app.label} Container", label: "${app.label} Container", completedSetup: true]) 
+			def conLabel
+			if(!app.label || app.label == "default") conLabel = defaultLabel()
+			else conLabel = app.label
+			container = addChildDevice("stephack", "Virtual Container", "SonosPreset${app.id}", null, [label: "${conLabel} Container", completedSetup: true]) 
 		} catch (e) {
 			log.error "Container device creation failed with error = ${e}"
 		}
@@ -168,7 +178,7 @@ def createContainer() {
 	}
     else {
     	container.label = "${app.label} Container"
-        container.name = "${app.label} Container"
+        //container.name = "${app.label} Container"
         log.info "Container renamed to [${app.label} Container]"
 	}
 }
@@ -187,8 +197,10 @@ def createPresets() {
 		}
 		else {
 			log.info "Creating SPC Child Device: " + "SPC${i}"
+			def childLabel = app."plLabel${i}"
+			if(app."plLabel${i}" == null) childLabel = "Preset ${i}"
 			try{
-				container.appCreateDevice(app."plLabel${i}", "Virtual Momentary Switch (hubitat)", "hubitat", "SPC${i}")
+				container.appCreateDevice(childLabel, "Virtual Momentary Switch (hubitat)", "hubitat", "SPC${i}")
 			}
 			catch (e) {
 				log.error "Child device creation failed with error = ${e}"
