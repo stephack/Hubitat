@@ -2,6 +2,7 @@
  *  LIFX Group of Groups
  *
  *  Copyright 2016 ericvitale@gmail.com
+ *  Edited and Upgraded for Hubitat by Stephan Hackett
  *
  *  Version 1.3.6 - Added more activity feed filtering. (10/9/2017) 
  *  Version 1.3.5 - Reduced activity feed chatter, also added a setting to disable on/off & setLevel messages. (10/8/2017)
@@ -51,7 +52,7 @@ import java.text.DecimalFormat;
 def version(){return "v1.0.20181029"}
 
 metadata {
-    definition (name: "LIFX Group of Groups3", namespace: "ericvitale", author: "ericvitale@gmail.com") {
+    definition (name: "LIFX Group of Groups", namespace: "stephack", author: "Eric Vitale & Stephan Hackett") {
         capability "Polling"
         capability "Switch"
         capability "Switch Level"
