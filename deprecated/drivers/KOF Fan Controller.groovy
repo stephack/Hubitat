@@ -1,0 +1,184 @@
+/**
+ *  Hampton Bay Zigbee Fan Controller (King Of Fans)
+ *
+ *  To be used with Ceiling Fan Remote Controller Model MR101Z receiver by Chungear Industrial Co. Ltd
+ *  at Home Depot Gardinier 52" Ceiling Fan, Universal Ceiling Fan/Light Premier Remote Model #99432
+ *
+ *  Copyright 2018 Stephan Hackett, Ranga Pedamallu
+ *
+
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License. You may obtain a copy of the License at:
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
+ *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
+ *  for the specific language governing permissions and limitations under the License.
+ *
+ *	2/12/18 - added "Fan Control" capability and replaced setFanSpeed with built in setSpeed
+ *
+ */
+def version() {"v1.0.20180413"}
+
+metadata {
+    definition (name: "Hampton Bay Zigbee Fan Controller", namespace: "stephack", author: "Stephan Hackett") {
+		capability "Actuator"
+        capability "Switch"
+        capability "Switch Level"
+        capability "Light"
+        capability "Sensor" 
+        capability "Fan Control" 
+        //capability "Polling"
+        //capability "Configuration"
+        //capability "Refresh"
+   
+        command "fanOff"
+        command "fanSpeed1"
+        command "fanSpeed2"
+        command "fanSpeed3"
+        command "fanSpeed4"
+        command "fanSpeedBreeze"
+        //command "setFanSpeed", ["number"]
+        command "fanSpeedResumeLast"
+        
+        attribute "fanMode", "string" 			//stores fanspeed
+        attribute "lightBrightness", "number"	//stores brightness level
+        attribute "lastFanSpeed", "number"		//used to restore previous fanmode
+      
+	fingerprint profileId: "0104", inClusters: "0000, 0003, 0004, 0005, 0006, 0008, 0202", outClusters: "0003, 0019", model: "HDC52EastwindFan"
+    }
+    
+  
+   
+}
+	
+def parse(String description) {
+	//log.debug "Parse description $description"
+    def event = zigbee.getEvent(description)
+    if (event) {
+    	log.info "Status report received from controller: [Light ${event.name} is ${event.value}]"
+        sendEvent(event)
+        if(event.value != "on" && event.value != "off") sendEvent(event)
+    }
+	else {
+		def map = [:]
+		if (description?.startsWith("read attr -")) {
+			def descMap = zigbee.parseDescriptionAsMap(description)
+			if (descMap.cluster == "0202" && descMap.attrId == "0000") {
+				map.name = "fanMode"
+				map.value = descMap.value.toInteger()
+                log.info "Status report received from controller: [Fan Mode is ${descMap.value}]"
+			}
+		}
+		def result = null
+        if (map) {
+			result = createEvent(map)
+		}
+        log.debug "Parse returned $map"
+		return result
+   	}
+}
+
+def installed() {
+ 	initialize()
+}
+
+def updated() {
+ 	initialize()
+}
+
+def initialize() {
+    state.version = version()
+}
+
+def getFanName() {
+	[
+    0:"Off",
+    1:"Low",
+    2:"Medium",
+    3:"Medium-High",
+	4:"High",
+    5:"Off",
+    6:"Comfort Breeze™",
+    //"7":"Light"
+	]
+}
+
+def off() {
+    log.info "Turning Light Off"
+	zigbee.off()
+}
+
+def on() {
+   	log.info "Turning Light On"
+	zigbee.on()
+}
+
+def setLevel(val) {
+    log.info "Adjusting Light Brightness Level to ${val}"
+    zigbee.setLevel(val) + (val?.toInteger() > 0 ? zigbee.on() : [])
+}
+
+def refresh() {
+    return zigbee.onOffRefresh() + zigbee.levelRefresh() + zigbee.readAttribute(0x0202, 0x0000)
+}
+
+def configure() {
+	log.info "Configuring Reporting and Bindings."
+    sendEvent(name: "checkInterval", value: 5 * 60, displayed: false, data: [protocol: "zigbee", hubHardwareId: device.hub.hardwareID])
+	return 	zigbee.configureReporting(0x0006, 0x0000, 0x10, 0, 600, null)+	//light on/off state - report min 0 max 600secs(10mins)
+			zigbee.configureReporting(0x0008, 0x0000, 0x20, 0, 600, 0x01)+	//light level state - report min 1 max 600secs(10mins)
+			zigbee.configureReporting(0x0202, 0x0000, 0x30, 0, 600, null)	//fan mode state - report min 0 max 600secs(10mins)
+            //zigbee.onOffConfig()+
+    		//zigbee.configSetup("8", "0", "0x20", "1", "100", "{01}")+
+            //zigbee.configSetup("202", "0", "0x30", "0", "100", "{01}")
+    		//zigbee.onOffConfig(0, 300)+
+            //zigbee.levelConfig(0, 300)+
+}
+
+def setSpeed(speed) {
+    def mySpeed = speed.toInteger()
+    if(mySpeed == 5 || mySpeed > 6 || mySpeed < 0) return
+	log.info "Adjusting Fan Speed to "+ getFanName()[mySpeed]
+    return zigbee.writeAttribute(0x0202, 0x0000, 0x30, mySpeed)
+}
+
+def fanOff() {
+	log.info "Turning Fan Off"
+    def fanNow = device.currentValue("fanMode")    //save fanspeed before turning off so it can be resumed when turned back on
+    if(fanNow != "00") sendEvent("name":"lastFanSpeed", "value":fanNow)  //do not save lastfanspeed if fan is already off
+    return zigbee.writeAttribute(0x0202, 0x0000, 0x30, 00)
+}
+
+def fanSpeedResumeLast() {
+    log.info "Resuming Previous Fan Speed"    
+	def lastFan =  device.currentValue("lastFanSpeed")	 //resumes previous fanspeed
+    return setFanSpeed(lastFan)
+}
+
+def fanSpeedBreeze() {
+	log.info "Setting Fan to Breeze Mode"
+    return zigbee.writeAttribute(0x0202, 0x0000, 0x30, 06)
+}
+
+def fanSpeed1() {
+    log.info "Setting Fan Speed to Low"
+    return zigbee.writeAttribute(0x0202, 0x0000, 0x30, 01)
+}
+
+def fanSpeed2() {
+    log.info "Setting Fan Speed to Medium"
+    return zigbee.writeAttribute(0x0202, 0x0000, 0x30, 02)    
+}
+
+def fanSpeed3() {
+    log.info "Setting Fan Speed to Medium-High"
+    return zigbee.writeAttribute(0x0202, 0x0000, 0x30, 03)    
+}
+
+def fanSpeed4() {
+    log.info "Setting Fan Speed to High"
+    return zigbee.writeAttribute(0x0202, 0x0000, 0x30, 04)
+}
