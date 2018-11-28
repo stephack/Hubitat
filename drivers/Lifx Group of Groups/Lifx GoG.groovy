@@ -1,6 +1,10 @@
 /**
  *  LIFX Group of Groups
  *
+ *  edited for HE by Stephan Hackett
+ *
+ *  HE v2.0.20181029
+ *
  *  Copyright 2016 ericvitale@gmail.com
  *  Edited and Upgraded for Hubitat by Stephan Hackett
  *
