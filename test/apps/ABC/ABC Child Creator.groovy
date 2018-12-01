@@ -57,7 +57,7 @@
  *		added the ability to cycle through Scenes (done using push() command and cycles in alphabetical order only)
  *		minor GUI updates
  */
-def version(){"v0.2.18102"}
+def version(){"v0.2.181201"}
 
 definition(
     name: "ABC Button Mapping",
