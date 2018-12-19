@@ -5,7 +5,13 @@
  *	Author: SmartThings, modified by Bruce Ravenel, Dale Coffing, Stephan Hackett
  * 
  *
+ *
+ *	12/15/18 - updated color scheme to match new HE theme
+ *			 - added suppot for Rules API
+ *
+ *
  *	10/12/18 - adjusted "Set Mode" to comply with mode related updates in firmware 1.1.5
+ *
  *
  *	8/01/18 - added Hubitat Safety Monitor Control (created new MODES section for Set Mode and Set HSM)
  * 		added level to setColor()
@@ -57,7 +63,10 @@
  *		added the ability to cycle through Scenes (done using push() command and cycles in alphabetical order only)
  *		minor GUI updates
  */
-def version(){"v0.2.181024"}
+
+import hubitat.helper.RMUtils
+
+def version(){"v0.2.181215"}
 
 definition(
     name: "ABC Button Mapping",
@@ -84,31 +93,31 @@ preferences {
 
 def chooseButton() {
 	dynamicPage(name: "chooseButton", install: true, uninstall: true) {
-		section("Step 1: Select Your Button Device") {
-            input "buttonDevice", "capability.pushableButton", title: "${getImage("Device", "50")}Button Device", description: "Tap to Select", multiple: false, required: true, submitOnChange: true
+		section(getFormat("header", "${getImage("Device", "45")}"+" Step 1: Select Your Button Device")) {
+            input "buttonDevice", "capability.pushableButton", title: getFormat("section", "Button Device"), description: "Tap to Select", multiple: false, required: true, submitOnChange: true
 		}
         if(buttonDevice){
-            //log.info buttonDevice.getSupportedCommands()
         	state.buttonType =  buttonDevice.typeName
             if(state.buttonType.contains("Aeon Minimote")) state.buttonType =  "Aeon Minimote"
             log.debug "Device Type is now set to: "+state.buttonType
             state.buttonCount = manualCount?: buttonDevice.currentValue('numberOfButtons')
-            section("Step 2: Configure Your Buttons"){
+            section(getFormat("header", "${getImage("Button", "45")}"+"  Step 2: Configure Your Buttons")) {
             	if(state.buttonCount<1) {
                 	paragraph "The selected button device did not report the number of buttons it has. Please specify in the Advanced Config section below."
                 }
                 else {
                 	for(i in 1..state.buttonCount){
-                		href "configButtonsPage", title: "${getImage("Button", "20")} Button ${i}", state: getDescription(i)!="Tap to configure"? "complete": null, description: getDescription(i), params: [pbutton: i]
+                		href "configButtonsPage", title: getFormat("section", "${getImage("Button", "30")}" + " Button ${i}"), state: getDescription(i)!="Tap to configure"? "complete": null, description: getDescription(i), params: [pbutton: i]
                     }
             	}
             }
 		}
-        section("Set Custom Name (Optional)") {
+        section(getFormat("header", "${getImage("Custom", "45")}"+"  Set Custom Name (Optional)")) {
         	label title: "Assign a name:", required: false
+            paragraph getFormat("line")
         }
         section("Advanced Config:", hideable: true, hidden: hideOptionsSection()) {
-            	input "manualCount", "number", title: "Set/Override # of Buttons?", required: false, description: "Only set if DTH does not report", submitOnChange: true
+            	input "manualCount", "number", title: "Set/Override # of Buttons?", required: false, description: "Only set if your driver does not report", submitOnChange: true
                 input "collapseAll", "bool", title: "Collapse Unconfigured Sections?", defaultValue: true
 			}
         section(title: "Only Execute When:", hideable: true, hidden: hideOptionsSection()) {
@@ -129,8 +138,8 @@ def configButtonsPage(params) {
 def getButtonSections(buttonNumber) {
 	return {    	
         def myDetail
-        section("<div style='color:#ffffff;background-color:#78bf35;text-align:center'>\n${getImage("Switches", "45")} SWITCHES</div>"){}
-        for(i in 1..27) {//Build 1st 26 Button Config Options
+        section(getFormat("header", "${getImage("Switches", "45")}"+" SWITCHES")){}
+        for(i in 1..28) {//Build 1st 28 Button Config Options
         	myDetail = getPrefDetails().find{it.sOrder==i}
         	//
     section(title: myDetail.secLabel, hideable: true, hidden: !(shallHide("${myDetail.id}${buttonNumber}"))) {
@@ -148,77 +157,64 @@ def getButtonSections(buttonNumber) {
         		if(showRelease(myDetail.desc)) input "${myDetail.id}${buttonNumber}_released", myDetail.cap, title: "When Released", multiple: myDetail.mul, required: false, submitOnChange: collapseAll, options: myDetail.opt
                 if(myDetail.sub && isReq("${myDetail.id}${buttonNumber}_released")) input "${myDetail.sub}${buttonNumber}_released", myDetail.subType, title: myDetail.sTitle, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_released"), description: myDetail.sDesc, options: myDetail.subOpt
 			}
-            if(i==3) section("\n<div style='color:#ffffff;background-color:#78bf35;text-align:center'>${getImage("Dimmers", "45")} DIMMERS</div>"){}
-            if(i==9) section("\n<div style='color:#ffffff;background-color:#78bf35;text-align:center'>${getImage("Color", "45")} COLOR LIGHTS</div>"){}
-            if(i==11) section("\n<div style='color:#ffffff;background-color:#78bf35;text-align:center'>${getImage("Speakers", "45")} SPEAKERS</div>"){}
-            if(i==17) section("\n<div style='color:#ffffff;background-color:#78bf35;text-align:center'>${getImage("Fans", "45")} FANS</div>"){}
-            if(i==20) section("\n<div style='color:#ffffff;background-color:#78bf35;text-align:center'>${getImage("Mode", "45")} MODES</div>"){}
-            if(i==22) section("\n<div style='color:#ffffff;background-color:#78bf35;text-align:center'>${getImage("Other", "45")} OTHER</div>"){} 
+            if(i==3) section("\n"+getFormat("header", "${getImage("Dimmers", "45")}"+" DIMMERS")){}
+            if(i==9) section("\n"+getFormat("header", "${getImage("Color", "45")}"+" COLOR LIGHTS")){}
+            if(i==11) section("\n"+getFormat("header", "${getImage("Speakers", "45")}"+" SPEAKERS")){}
+            if(i==17) section("\n"+getFormat("header", "${getImage("Fans", "45")}"+" FANS")){}
+            if(i==20) section("\n"+getFormat("header", "${getImage("Mode", "45")}"+" MODES")){}
+			if(i==22) section("\n"+getFormat("header", "${getImage("Rule", "45")}"+" RULE CONTROL")){}
+            if(i==23) section("\n"+getFormat("header", "${getImage("Other", "45")}"+" OTHER")){}
         }
 		
-        section("Notifications (SMS):", hideable:true , hidden: !shallHide("notifications_${buttonNumber}")) {
-        //paragraph "*******************\nWHEN PUSHED\n*******************"
+		section(getFormat("section", "Notifications (SMS):"), hideable:true , hidden: !shallHide("notifications_${buttonNumber}")) {
 			input "notifications_${buttonNumber}_pushed", "text", title: "Message To Send When Pushed:", description: "Enter message to send", required: false, submitOnChange: collapseAll
             input "phone_${buttonNumber}_pushed","phone" ,title: "Send Text To:", description: "Enter phone number", required: false, submitOnChange: collapseAll
-            //input "valNotify${buttonNumber}_pushed","bool" ,title: "Notify in App?", required: false, defaultValue: false, submitOnChange: collapseAll
             if(showHeld()) {
-            	paragraph "<hr style='background-color:#78bf35; height: 2px; border: 0;'></hr>"
+            	paragraph getFormat("line")
 				input "notifications_${buttonNumber}_held", "text", title: "Message To Send When Held:", description: "Enter message to send", required: false, submitOnChange: collapseAll
 				input "phone_${buttonNumber}_held", "phone", title: "Send Text To:", description: "Enter phone number", required: false, submitOnChange: collapseAll
-				//input "valNotify${buttonNumber}_held", "bool", title: "Notify in App?", required: false, defaultValue: false, submitOnChange: collapseAll
             }
             if(showDouble()) {
-            	paragraph "<hr style='background-color:#78bf35; height: 2px; border: 0;'></hr>"
+            	paragraph getFormat("line")
 				input "notifications_${buttonNumber}_doubleTapped", "text", title: "Message To Send When Double Tapped:", description: "Enter message to send", required: false, submitOnChange: collapseAll
 				input "phone_${buttonNumber}_doubleTapped", "phone", title: "Send Text To:", description: "Enter phone number", required: false, submitOnChange: collapseAll
-				//if(showDouble())input "valNotify${buttonNumber}_doubleTapped", "bool", title: "Notify in App?", required: false, defaultValue: false, submitOnChange: collapseAll           
             }
             if(showRelease()) {
-            	paragraph "<hr style='background-color:#78bf35; height: 2px; border: 0;'></hr>"
+            	paragraph getFormat("line")
 				input "notifications_${buttonNumber}_released", "text", title: "Message To Send When Released:", description: "Enter message to send", required: false, submitOnChange: collapseAll
 				input "phone_${buttonNumber}_released", "phone", title: "Send Text To:", description: "Enter phone number", required: false, submitOnChange: collapseAll
-				//input "valNotify${buttonNumber}_released", "bool", title: "Notify in App?", required: false, defaultValue: false, submitOnChange: collapseAll
             }
 		}
-    	/*
-        section("${getImage("Speech", "36")}Notifications (Speech):    ", hideable:true , hidden: !shallHide("speechDevice_${buttonNumber}")) {
-        	input "speechDevice_${buttonNumber}_pushed","capability.speechSynthesis" ,title: "When Pushed", description: "Select Speech Device", required: false, submitOnChange: collapseAll
-        	input "speechTxt${buttonNumber}_pushed", "text", title: "Message To Speak When Pushed:", description: "Enter message to speak", required: false, submitOnChange: collapseAll
-        	if(showHeld()) {
-			 	input "speechDevice_${buttonNumber}_held", "capability.speechSynthesis", title: "When Held", description: "Select Speech Device", required: false, submitOnChange: collapseAll
-             	input "speechTxt${buttonNumber}_held", "text", title: "Message To Speak When Held:", description: "Enter message to speak", required: false, submitOnChange: collapseAll
-            }
-            if(showDouble()) {
-				input "speechDevice_${buttonNumber}_doubleTapped", "capability.speechSynthesis", title: "When Double Tapped", description: "Select Speech Device", required: false, submitOnChange: collapseAll
-                input "speechTxt${buttonNumber}_doubleTapped", "text", title: "Message To Speak When Double Tapped:", description: "Enter message to speak", required: false, submitOnChange: collapseAll
-            }
-            if(showRelease()) {
-			 	input "speechDevice_${buttonNumber}_released", "capability.speechSynthesis", title: "When Released", description: "Select Speech Device", required: false, submitOnChange: collapseAll
-             	input "speechTxt${buttonNumber}_released", "text", title: "Message To Speak When Released:", description: "Enter message to speak", required: false, submitOnChange: collapseAll
-            }
-		}       
-        */
 	}
 }
 
 def getImage(type, mySize) {
     def loc = "<img src=https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/"
-    if(type.contains("Device")) return "${loc}Device.png height=${mySize} width=${mySize}>   "
-    if(type.contains("Button")) return "${loc}Button.png height=${mySize} width=${mySize}>   "
-    if(type.contains("Switches")) return "${loc}Switches.png height=${mySize} width=${mySize}>   "
-    if(type.contains("Color")) return "${loc}Color.png height=${mySize} width=${mySize}>   "
-    if(type.contains("Dimmers")) return "${loc}Dimmers.png height=${mySize} width=${mySize}>   "
-    if(type.contains("Speakers")) return "${loc}Speakers.png height=${mySize} width=${mySize}>   "
-    if(type.contains("Fans")) return "${loc}Fans.png height=${mySize} width=${mySize}>   "
-    if(type.contains("HSM")) return "${loc}Mode.png height=${mySize} width=${mySize}>   "
-    if(type.contains("Mode")) return "${loc}Mode.png height=${mySize} width=${mySize}>   "
-    if(type.contains("Other")) return "${loc}Other.png height=${mySize} width=${mySize}>   "
-    if(type.contains("Locks")) return "${loc}Locks.png height=30 width=30>   "
-    if(type.contains("Sirens")) return "${loc}Sirens.png height=30 width=30>   "
-    if(type.contains("Scenes")) return "${loc}Scenes.png height=30 width=30>   "
-    if(type.contains("Shades")) return "${loc}Shades.png height=30 width=30>   "
-    if(type.contains("SMS")) return "${loc}SMS.png height=30 width=30>   "
-    if(type.contains("Speech")) return "${loc}Audio.png height=30 width=30>   "
+    if(type == "Device") return "${loc}Device.png height=${mySize} width=${mySize}>   "
+    if(type == "Button") return "${loc}Button.png height=${mySize} width=${mySize}>   "
+    if(type == "Switches") return "${loc}Switches.png height=${mySize} width=${mySize}>   "
+    if(type == "Color") return "${loc}Color.png height=${mySize} width=${mySize}>   "
+    if(type == "Dimmers") return "${loc}Dimmers.png height=${mySize} width=${mySize}>   "
+    if(type == "Speakers") return "${loc}Speakers.png height=${mySize} width=${mySize}>   "
+    if(type == "Fans") return "${loc}Fans.png height=${mySize} width=${mySize}>   "
+    if(type == "HSM") return "${loc}Mode.png height=${mySize} width=${mySize}>   "
+    if(type == "Mode") return "${loc}Mode.png height=${mySize} width=${mySize}>   "
+    if(type == "Other") return "${loc}Other.png height=${mySize} width=${mySize}>   "
+    if(type == "Custom") return "${loc}Custom.png height=${mySize} width=${mySize}>   "
+    if(type == "Locks") return "${loc}Locks.png height=30 width=30>   "
+    if(type == "Sirens") return "${loc}Sirens.png height=30 width=30>   "
+    if(type == "Scenes") return "${loc}Scenes.png height=30 width=30>   "
+    if(type == "Shades") return "${loc}Shades.png height=30 width=30>   "
+    if(type == "SMS") return "${loc}SMS.png height=30 width=30>   "
+    if(type == "Speech") return "${loc}Audio.png height=30 width=30>   "
+	if(type == "Rule") return "${loc}Rule.png height=${mySize} width=${mySize}>   "
+}
+
+def getFormat(type, myText=""){
+    if(type == "section") return "<div style='color:#78bf35;font-weight: bold'>${myText}</div>"
+    if(type == "command") return "<div style='color:red;font-weight: bold'>${myText}</div>"
+    if(type == "header") return "<div style='color:#ffffff;background-color:#392F2E;text-align:center'>${myText}</div>"
+    if(type == "line") return "\n<hr style='background-color:#78bf35; height: 2px; border: 0;'></hr>"
 }
 
 def shallHide(myFeature) {
@@ -231,9 +227,9 @@ def isReq(myFeature) {
 }
 
 def showPush(desc) {
-    if(buttonDevice.capabilities.find{it.name=="PushableButton"}){ 	//is device pushable?
+    if(buttonDevice.hasCapability("PushableButton")){ 	//is device pushable?
         if(desc.contains("Ramp")){									
-            if(buttonDevice.capabilities.find{it.name=="HoldableButton"}) return false	//if this is the Ramp section and device is also Holdable, then hide Pushed option
+            if(buttonDevice.hasCapability("HoldableButton")) return false	//if this is the Ramp section and device is also Holdable, then hide Pushed option
         }
         return true
     }
@@ -241,23 +237,17 @@ def showPush(desc) {
 }
 
 def showHeld(desc) {
-    def devCaps = buttonDevice.capabilities.find{it.name=="HoldableButton"}
-    if(devCaps) return true
-	return false
+    return buttonDevice.hasCapability("HoldableButton")
 }
 
 def showDouble(desc) {
     if(desc && desc.contains("Ramp")) return false //remove DoubleTapped option when setting smooth dimming button/devices
-    def devCaps = buttonDevice.capabilities.find{it.name=="DoubleTapableButton"}
-    if(devCaps) return true
-	return false
+    return buttonDevice.hasCapability("DoubleTapableButton")
 }
 
 def showRelease(desc) {
     if(desc && desc.contains("Ramp")) return false //remove On Release option when setting smooth dimming button/devices
-    def devCaps = buttonDevice.capabilities.find{it.name=="ReleasableButton"}
-    if(devCaps) return true
-	return false
+    return buttonDevice.hasCapability("ReleasableButton")
 }
 
 def getDescription(dNumber) {
@@ -294,6 +284,11 @@ def getDescDetails(bNum, type){
     }
 }
 
+def getRules(){
+	def rules = RMUtils.getRuleList()
+ 	return rules
+}
+
 def installed() {
 	initialize()
 }
@@ -307,7 +302,6 @@ def initialize() {
     log.debug "INITIALIZED with settings: ${settings}"
     log.info app.label
     if(!app.label || app.label == "default")app.updateLabel(defaultLabel())
-	//app.label==app.name?app.updateLabel(defaultLabel()):app.updateLabel(app.label)
 	subscribe(buttonDevice, "pushed", buttonEvent)
 	subscribe(buttonDevice, "held", buttonEvent)
 	subscribe(buttonDevice, "doubleTapped", buttonEvent)
@@ -321,40 +315,43 @@ def defaultLabel() {
 
 def getPrefDetails(){
 	def detailMappings =
-    	[[id:'lightOn_', sOrder:1, desc:'Turn On ', comm:turnOn, type:"normal", secLabel: "Turn On", cap: "capability.switch", mul: true],
-     	 [id:"lightOff_", sOrder:2, desc:'Turn Off', comm:turnOff, type:"normal", secLabel: "Turn Off", cap: "capability.switch", mul: true],
-         [id:'lights_', sOrder:3, desc:'Toggle On/Off', comm:toggle, type:"normal", secLabel: "Toggle On/Off", cap: "capability.switch", mul: true],
+    	[[id:'lightOn_', sOrder:1, desc:'Turn On ', comm:turnOn, type:"normal", secLabel: getFormat("section", "Turn On"), cap: "capability.switch", mul: true],
+     	 [id:"lightOff_", sOrder:2, desc:'Turn Off', comm:turnOff, type:"normal", secLabel: getFormat("section", "Turn Off"), cap: "capability.switch", mul: true],
+         [id:'lights_', sOrder:3, desc:'Toggle On/Off', comm:toggle, type:"normal", secLabel: getFormat("section", "Toggle On/Off"), cap: "capability.switch", mul: true],
          
-         [id:"lightDim_", sOrder:4, desc:'Dim to ', comm:turnDim, sub:"valLight", subType:"number", type:"hasSub", secLabel: "On to Level - Group 1", cap: "capability.switchLevel", sTitle: "Bright Level", sDesc:"0 to 100%", mul: true],
-     	 [id:"lightD2m_", sOrder:5, desc:'Dim to ', comm:turnDim, sub:"valLight2", subType:"number", type:"hasSub", secLabel: "On to Level - Group 2", cap: "capability.switchLevel", sTitle: "Bright Level", sDesc:"0 to 100%", mul: true],
-         [id:'dimPlus_', sOrder:6, desc:'Brightness +', comm:levelUp, sub:"valDimP", subType:"number", type:"hasSub", secLabel: "Increase Level By", cap: "capability.switchLevel", sTitle: "Increase by", sDesc:"0 to 15", mul: true],
-     	 [id:'dimMinus_', sOrder:7, desc:'Brightness -', comm:levelDown, sub:"valDimM", subType:"number", type:"hasSub", secLabel: "Decrease Level By", cap: "capability.switchLevel", sTitle: "Decrease by", sDesc:"0 to 15", mul: true],
-         [id:'lightsDT_', sOrder:8, desc:'Toggle Off/Dim to ', comm:dimToggle, sub:"valDT", subType:"number", type:"hasSub", secLabel: "Toggle OnToLevel/Off", cap: "capability.switchLevel", sTitle: "Bright Level", sDesc:"0 to 100%", mul: true],
-         [id:'lightsRamp_', sOrder:9, desc:'Ramp ', comm:rampUp, sub:"valDir", subType:"enum", subOpt:['up','down'], type:"hasSub", secLabel: "Ramp Up/Down", cap: "capability.changeLevel", sTitle: "Ramp Direction (Up/Down)", sDesc:"Up or Down", mul: true],
+         [id:"lightDim_", sOrder:4, desc:'Dim to ', comm:turnDim, sub:"valLight", subType:"number", type:"hasSub", secLabel: getFormat("section", "On to Level - Group 1"), cap: "capability.switchLevel", sTitle: "Bright Level", sDesc:"0 to 100%", mul: true],
+     	 [id:"lightD2m_", sOrder:5, desc:'Dim to ', comm:turnDim, sub:"valLight2", subType:"number", type:"hasSub", secLabel: getFormat("section", "On to Level - Group 2"), cap: "capability.switchLevel", sTitle: "Bright Level", sDesc:"0 to 100%", mul: true],
+         [id:'dimPlus_', sOrder:6, desc:'Brightness +', comm:levelUp, sub:"valDimP", subType:"number", type:"hasSub", secLabel: getFormat("section", "Increase Level By"), cap: "capability.switchLevel", sTitle: "Increase by", sDesc:"0 to 15", mul: true],
+     	 [id:'dimMinus_', sOrder:7, desc:'Brightness -', comm:levelDown, sub:"valDimM", subType:"number", type:"hasSub", secLabel: getFormat("section", "Decrease Level By"), cap: "capability.switchLevel", sTitle: "Decrease by", sDesc:"0 to 15", mul: true],
+         [id:'lightsDT_', sOrder:8, desc:'Toggle Off/Dim to ', comm:dimToggle, sub:"valDT", subType:"number", type:"hasSub", secLabel: getFormat("section", "Toggle OnToLevel/Off"), cap: "capability.switchLevel", sTitle: "Bright Level", sDesc:"0 to 100%", mul: true],
+         [id:'lightsRamp_', sOrder:9, desc:'Ramp ', comm:rampUp, sub:"valDir", subType:"enum", subOpt:['up','down'], type:"hasSub", secLabel: getFormat("section", "Ramp Up/Down"), cap: "capability.changeLevel", sTitle: "Ramp Direction (Up/Down)", sDesc:"Up or Down", mul: true],
          
-         [id:'lightColorTemp_', sOrder:10, desc:'Set Light Color Temp to ', comm:colorSetT, sub:"valColorTemp", subType:"number", type:"hasSub", secLabel: "Set Temperature", cap: "capability.colorTemperature", sTitle: "Color Temp", sDesc:"2000 to 9000", mul: true],
-         [id:'lightColor_', sOrder:11, desc:'Set Light Color H:', comm:colorSet, sub:"valHue", subType:"number", sub2:"valSat", sub3:"valLvl", type:"hasSub", secLabel: "Set Color", cap: "capability.colorControl", sTitle: "Hue", s2Title: "Saturation", s3Title: "Level", sDesc:"0 to 100", s2Desc:"0 to 100", s3Desc:"0 to 100", mul: true],
+         [id:'lightColorTemp_', sOrder:10, desc:'Set Light Color Temp to ', comm:colorSetT, sub:"valColorTemp", subType:"number", type:"hasSub", secLabel: getFormat("section", "Set Temperature"), cap: "capability.colorTemperature", sTitle: "Color Temp", sDesc:"2000 to 9000", mul: true],
+         [id:'lightColor_', sOrder:11, desc:'Set Light Color H:', comm:colorSet, sub:"valHue", subType:"number", sub2:"valSat", sub3:"valLvl", type:"hasSub", secLabel: getFormat("section", "Set Color"), cap: "capability.colorControl", sTitle: "Hue", s2Title: "Saturation", s3Title: "Level", sDesc:"0 to 100", s2Desc:"0 to 100", s3Desc:"0 to 100", mul: true],
      	          
-         [id:"speakerpp_", sOrder:12, desc:'Toggle Play/Pause', comm:speakerplaystate, type:"normal", secLabel: "Toggle Play/Pause", cap: "capability.musicPlayer", mul: true],
-     	 [id:'speakervu_', sOrder:13, desc:'Volume +', comm:levelUp, sub:"valSpeakU", subType:"number", type:"hasSub", secLabel: "Increase Volume By", cap: "capability.musicPlayer", sTitle: "Increase by", sDesc:"0 to 15", mul: true],
-     	 [id:"speakervd_", sOrder:14, desc:'Volume -', comm:levelDown, sub:"valSpeakD", subType:"number", type:"hasSub", secLabel: "Decrease Volume By", cap: "capability.musicPlayer", sTitle: "Decrease by", sDesc:"0 to 15", mul: true],
-         [id:'speakernt_', sOrder:15, desc:'Next Track', comm:speakernexttrack, type:"normal", secLabel: "Go to Next Track", cap: "capability.musicPlayer", mul: true],
-    	 [id:'speakermu_', sOrder:16, desc:'Mute', comm:speakermute, type:"normal", secLabel: "Speakers Toggle Mute", cap: "capability.musicPlayer", mul: true],
-         [id:"musicPreset_", sOrder:17, desc:'Cycle Preset', comm:cyclePlaylist, type:"normal", secLabel: "Preset to Cycle", cap: "capability.switch", mul: true],         
+         [id:"speakerpp_", sOrder:12, desc:'Toggle Play/Pause', comm:speakerplaystate, type:"normal", secLabel: getFormat("section", "Toggle Play/Pause"), cap: "capability.musicPlayer", mul: true],
+     	 [id:'speakervu_', sOrder:13, desc:'Volume +', comm:levelUp, sub:"valSpeakU", subType:"number", type:"hasSub", secLabel: getFormat("section", "Increase Volume By"), cap: "capability.musicPlayer", sTitle: "Increase by", sDesc:"0 to 15", mul: true],
+     	 [id:"speakervd_", sOrder:14, desc:'Volume -', comm:levelDown, sub:"valSpeakD", subType:"number", type:"hasSub", secLabel: getFormat("section", "Decrease Volume By"), cap: "capability.musicPlayer", sTitle: "Decrease by", sDesc:"0 to 15", mul: true],
+         [id:'speakernt_', sOrder:15, desc:'Next Track', comm:speakernexttrack, type:"normal", secLabel: getFormat("section", "Go to Next Track"), cap: "capability.musicPlayer", mul: true],
+    	 [id:'speakermu_', sOrder:16, desc:'Mute', comm:speakermute, type:"normal", secLabel: getFormat("section", "Speakers Toggle Mute"), cap: "capability.musicPlayer", mul: true],
+         [id:"musicPreset_", sOrder:17, desc:'Cycle Preset', comm:cyclePlaylist, type:"normal", secLabel: getFormat("section", "Preset to Cycle"), cap: "device.VirtualContainer", mul: true],         
          
-         [id:'fanSet_', sOrder:18, desc:'Set Fan to ', comm:setFan, sub:"valSpeed", subType:"enum", subOpt:['off','low','medium-low','medium','high'], type:"hasSub", secLabel: "Set Speed", cap: "capability.fanControl", sTitle: "Set Speed to", sDesc:"L/ML/M/H", mul: true],
-         [id:"fanCycle_", sOrder:19, desc:'Cycle Fan Speed', comm:cycleFan, type:"normal", secLabel: "Cycle Speed", cap: "capability.fanControl", mul: true],         
-         [id:"fanAdjust_", sOrder:20,desc:'Adjust', comm:adjustFan, type:"normal", secLabel: "Cycle Speed (Legacy)", cap: "capability.switchLevel", mul: true],
+         [id:'fanSet_', sOrder:18, desc:'Set Fan to ', comm:setFan, sub:"valSpeed", subType:"enum", subOpt:['off','low','medium-low','medium','high'], type:"hasSub", secLabel: getFormat("section", "Set Speed"), cap: "capability.fanControl", sTitle: "Set Speed to", sDesc:"L/ML/M/H", mul: true],
+         [id:"fanCycle_", sOrder:19, desc:'Cycle Fan Speed', comm:cycleFan, type:"normal", secLabel: getFormat("section", "Cycle Speed"), cap: "capability.fanControl", mul: true],         
+         [id:"fanAdjust_", sOrder:20,desc:'Adjust', comm:adjustFan, type:"normal", secLabel: getFormat("section", "Cycle Speed (Legacy)"), cap: "capability.switchLevel", mul: true],
          
-         [id:"mode_", sOrder:21, desc:'Set Mode', comm:changeMode, type:"normal", secLabel: "Set Mode", cap: "mode", mul: false],
-     	 [id:"hsm_", sOrder:22, desc:'Set HSM', comm:setHSM, type:"normal", secLabel: "Set HSM", cap: "enum", opt:['armAway','armHome','disarm','armRules','disarmRules','disarmAll','armAll','cancelAlerts'], mul: false],
-         
-         [id:"locks_", sOrder:23, desc:'Lock', comm:setUnlock, type:"normal", secLabel: "Locks (Lock Only)", cap: "capability.lock", mul: true],
-         [id:"shadeAdjust_", sOrder:24,desc:'Adjust', comm:adjustShade, type:"normal", secLabel: "Shades (Up/Down/Stop)", cap: "capability.doorControl", mul: true],
-         [id:'sirens_', sOrder:25, desc:'Toggle', comm:toggle, type:"normal", secLabel: "Sirens (Toggle)", cap: "capability.alarm", mul: true],
-		 [id:'cycleScenes_', sOrder:26, desc:'Cycle', comm:cycle, type:"normal", secLabel: "Scenes (Cycle)", cap: "device.SceneActivator", mul: true, isCycle: true],
-         [id:"speechDevice_", sOrder:27, desc:'Send Msg To', comm:speechHandle, type:"normal", secLabel: "Notifications (Speech):", sub:"speechTxt", cap: "capability.speechSynthesis", subType:"text", sTitle: "Message To Speak:", sDesc:"Enter message to speak", mul: true],///set type to normal instead of sub so message text is not displayed
-         [id:"notifications_", desc:'Send Push Notification', comm:messageHandle, sub:"valNotify", type:"bool"],
+         [id:"mode_", sOrder:21, desc:'Set Mode', comm:changeMode, type:"normal", secLabel: getFormat("section", "Set Mode"), cap: "mode", mul: false],
+     	 [id:"hsm_", sOrder:22, desc:'Set HSM', comm:setHSM, type:"normal", secLabel: getFormat("section", "Set HSM"), cap: "enum", opt:['armAway','armHome','disarm','armRules','disarmRules','disarmAll','armAll','cancelAlerts'], mul: false],
+
+         [id:'rule_', sOrder:23, desc:'Rule To ', comm:ruleExec, sub:"valRule", subType:"enum", subOpt:['Run','Stop','Pause','Resume','Evaluate','Set Boolean True','Set Boolean False'], type:"hasSub", secLabel: getFormat("section", "Rule and Actions"), cap: "enum", opt: getRules(), sTitle: "Select Action Type", sDesc:"Choose Action", mul: true],
+		 
+         [id:"locks_", sOrder:24, desc:'Lock', comm:setUnlock, type:"normal", secLabel: getFormat("section", "Locks (Lock Only)"), cap: "capability.lock", mul: true],
+		 [id:'cycleScenes_', sOrder:25, desc:'Cycle', comm:cycle, type:"normal", secLabel: getFormat("section", "Scenes (Cycle)"), cap: "device.SceneActivator", mul: true, isCycle: true],
+         [id:"shadeAdjust_", sOrder:26,desc:'Adjust', comm:adjustShade, type:"normal", secLabel: getFormat("section", "Shades (Up/Down/Stop)"), cap: "capability.doorControl", mul: true],
+         [id:'sirens_', sOrder:27, desc:'Toggle', comm:toggle, type:"normal", secLabel: getFormat("section", "Sirens (Toggle)"), cap: "capability.alarm", mul: true],
+         [id:"speechDevice_", sOrder:28, desc:'Send Msg To', comm:speechHandle, type:"normal", secLabel: getFormat("section", "Notifications (Speech):"), sub:"speechTxt", cap: "capability.speechSynthesis", subType:"text", sTitle: "Message To Speak:", sDesc:"Enter message to speak", mul: true],///set type to normal instead of sub so message text is not displayed
+		 
+		 [id:"notifications_", desc:'Send Push Notification', comm:messageHandle, sub:"valNotify", type:"bool"],
      	 [id:"phone_", desc:'Send SMS', comm:smsHandle, sub:"notifications_", type:"normal"],
         ]
     return detailMappings
@@ -440,8 +437,6 @@ def adjustShade(device) {
     	device.stop()
     } else {
     	state.lastshadesUp ? device.down() : device.up()
-//    	if(state.lastshadesUp) device.down()
-//        else device.up()
         state.lastshadesUp = !state.lastshadesUp
     }
 }
@@ -452,12 +447,7 @@ def setFan(devices, speed){
 
 def speakerplaystate(device) {
 	log.debug "Toggling Play/Pause: $device"
-    //log.info device.currentDriverType[0]
-    //if(device.currentDriverType[0] == "custom"){device.togPlay()}
-    //else{
-		device.currentStatus.contains('playing')? device.pause() : device.play()
-    //}
-    
+	device.currentStatus.contains('playing')? device.pause() : device.play()
 }
    
 def speakernexttrack(device) {
@@ -527,6 +517,20 @@ def runRout(rout){
 	location.helloHome.execute(rout)
 }
 
+def ruleExec(rules, action){
+	log.debug "Performing ${action} Action on Rules: ${rules}"
+	def ruleAction
+	if(action == "Run") ruleAction =  "runRuleAct"
+	if(action == "Stop") ruleAction =  "stopRuleAct"
+	if(action == "Pause") ruleAction =  "pauseRule"
+	if(action == "Resume") ruleAction =  "resumeRule"
+	if(action == "Evaluate") ruleAction =  "runRule"
+	if(action == "Set Boolean True") ruleAction =  "setRuleBooleanTrue"
+	if(action == "Set Boolean False") ruleAction =  "setRuleBooleanFalse"
+	
+	RMUtils.sendAction(rules, ruleAction, app.label)
+}
+
 def messageHandle(msg, inApp) {
 	if(inApp==true) {
     	log.debug "Push notification sent"
@@ -541,7 +545,6 @@ def smsHandle(phone, msg){
 
 def setHSM(hsmMode) {
     sendLocationEvent(name: "hsmSetArm", value: hsmMode)
-
 }
 
 def changeMode(mode) {
@@ -549,7 +552,7 @@ def changeMode(mode) {
 	if (location.mode != mode && location.modes?.find { it.name == mode}) setLocationMode(mode)
 }
 
-def cycleFan(devices) {
+def cycleFan(devices) { //all fans will sync speeds with fisrt fan in the list
     log.debug "Cycling: $devices"
     def mySpeed = devices.currentSpeed
     if(mySpeed[0] == "off") devices.setSpeed(1) 
