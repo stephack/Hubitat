@@ -14,7 +14,7 @@
  *  Copyright 2018 Stephan Hackett
  *
  */
-def version() {"v1.0.20180111"}
+def version() {"v1.0.20190111"}
 
 metadata {
 	definition (name: "GE Zwave Plus Dimmer Switch", namespace: "stephack", author: "Stephan Hackett and Chris Nussbaum") {
