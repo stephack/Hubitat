@@ -14,7 +14,7 @@
  *  Copyright 2018 Stephan Hackett
  *
  */
-def version() {"v1.0.20190111"}
+def version() {"v1.0.20180111"}
 
 metadata {
 	definition (name: "GE Zwave Plus Dimmer Switch", namespace: "stephack", author: "Stephan Hackett and Chris Nussbaum") {
@@ -173,6 +173,21 @@ def doubleTapLower() {
 
 def configure(){
  	sendEvent(name: "numberOfButtons", value: 2, displayed: false)
+	def cmds = []
+    // Get current config parameter values
+    cmds << zwave.configurationV2.configurationGet(parameterNumber: 3).format()
+    cmds << zwave.configurationV2.configurationGet(parameterNumber: 4).format()
+    cmds << zwave.configurationV2.configurationGet(parameterNumber: 7).format()
+    cmds << zwave.configurationV2.configurationGet(parameterNumber: 8).format()
+    cmds << zwave.configurationV2.configurationGet(parameterNumber: 9).format()
+    cmds << zwave.configurationV2.configurationGet(parameterNumber: 10).format()
+    cmds << zwave.configurationV2.configurationGet(parameterNumber: 11).format()
+    cmds << zwave.configurationV2.configurationGet(parameterNumber: 12).format()
+    
+    // Add the hub to association group 3 to get double-tap notifications
+    cmds << zwave.associationV2.associationSet(groupingIdentifier: 3, nodeId: zwaveHubNodeId).format()
+    
+    delayBetween(cmds,500)
     response(refresh())
 }
 
