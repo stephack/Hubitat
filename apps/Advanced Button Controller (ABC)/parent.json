@@ -11,5 +11,5 @@
   "<img src='https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/update.png' title='Please Update Driver.'></a><small><span style='color:red'> Update Available: ",
   
   "changeLog":
-  "<a href='https://community.hubitat.com/t/release-virtual-container-driver/' target='_blank'>[Update Notes]</a></span></small>"
+  "<a href='https://community.hubitat.com/t/advanced-button-controller-abc/' target='_blank'>[Update Notes]</a></span></small>"
 }
