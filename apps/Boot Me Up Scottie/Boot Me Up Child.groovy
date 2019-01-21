@@ -13,6 +13,7 @@ preferences {
     section("Choose Switch") {
     	input "myDevice", "capability.switch", required: true, title: "Choose a Switch"
         input "myMac", "text", required: true, title: "MAC of workstation"
+	input "logEnable", "bool", title: "Enable Debug Logging?"
     }
 }
 
@@ -32,14 +33,15 @@ def initialize() {
 }
 
 def myHandler(evt) {
-	log.info "${myDevice} activated"
+	if(logEnable) log.debug "${myDevice} activated"
     sendHubCommand(createWOL())
 }
 
 def createWOL(evt) {
-    log.debug "Sending Magic Packet to: $myMac"
+	def newMac = myMac.replaceAll(":","").replaceAll("-","")
+    if(logEnable) log.debug "Sending Magic Packet to: $newMac"
     def result = new hubitat.device.HubAction (
-       	"wake on lan $myMac",
+       	"wake on lan $newMac",
        	hubitat.device.Protocol.LAN,
        	null
     )    
