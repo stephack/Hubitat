@@ -86,18 +86,23 @@ def getIp(){
         contentType: "text/html",
         requestContentType: "text/html",
     ]
-	httpGet(params){response ->
-		if(response.status != 200) {
-			log.warn "Did not received valid data from IP check!"
-		}
-		else {
-			if(logEnable) log.debug "Received IP: " + response.data
-			if(response.data==device.currentValue("ip")){
-				if(logEnable) log.debug "Ip has not changed. No need to send update request"
+	try{
+		httpGet(params){response ->
+			if(response.status != 200) {
+				log.warn "Did not received valid data from IP check!"
 			}
-			else updateGoogle(response.data)
+			else {
+				if(logEnable) log.debug "Received IP: " + response.data
+				if(response.data==device.currentValue("ip")){
+					if(logEnable) log.debug "Ip has not changed. No need to send update request"
+				}
+				else updateGoogle(response.data)
+			}
 		}
 	}
+	catch (Exception e) {
+        log.debug "HttpGet Error: ${e}"
+	}  
 }
 
 def updateGoogle(myIp){
@@ -107,22 +112,27 @@ def updateGoogle(myIp){
         contentType: "text/html",
         requestContentType: "text/html",
     ]
-	httpPost(params){response ->
-		if(logEnable) log.debug "Response Status: " + response.status
-		if(logEnable) log.debug "Response Data: " + response.data
-		
-		def responseCode = "${response.data}"
-		if(response.status != 200) log.error "Invalid URL or Unable to contact domains.google.com - Enable Debug logging for details!"
-		else if(responseCode.contains("good")){
-			log.info "Ip successfully updated to: " + myIp
-			sendEvent(name: "ip", value: myIp)
+	try{
+		httpPost(params){response ->
+			if(logEnable) log.debug "Response Status: " + response.status
+			if(logEnable) log.debug "Response Data: " + response.data
+
+			def responseCode = "${response.data}"
+			if(response.status != 200) log.error "Invalid URL or Unable to contact domains.google.com - Enable Debug logging for details!"
+			else if(responseCode.contains("good")){
+				log.info "Ip successfully updated to: " + myIp
+				sendEvent(name: "ip", value: myIp)
+			}
+			else if(responseCode.contains("nochg")) log.warn "The supplied IP address is already set for this host. You should not attempt another update until your IP address changes."
+			else if(responseCode=="nohost")	log.warn "The hostname does not exist, or does not have Dynamic DNS enabled."
+			else if(responseCode=="badauth") log.warn "The username / password combination is not valid for the specified host."
+			else if(responseCode=="notfqdn") log.warn "The supplied hostname is not a valid fully-qualified domain name."
+			else if(responseCode=="badagent") log.warn "Your Dynamic DNS client is making bad requests. Ensure the user agent is set in the request, and that you’re only attempting to set an IPv4 address. IPv6 is not supported."
+			else if(responseCode=="abuse") log.warn "Dynamic DNS access for the hostname has been blocked due to failure to interpret previous responses correctly."
+			else if(responseCode=="911") log.warn "An error happened on our end. Wait 5 minutes and retry."
 		}
-		else if(responseCode.contains("nochg")) log.warn "The supplied IP address is already set for this host. You should not attempt another update until your IP address changes."
-		else if(responseCode=="nohost")	log.warn "The hostname does not exist, or does not have Dynamic DNS enabled."
-		else if(responseCode=="badauth") log.warn "The username / password combination is not valid for the specified host."
-		else if(responseCode=="notfqdn") log.warn "The supplied hostname is not a valid fully-qualified domain name."
-		else if(responseCode=="badagent") log.warn "Your Dynamic DNS client is making bad requests. Ensure the user agent is set in the request, and that you’re only attempting to set an IPv4 address. IPv6 is not supported."
-		else if(responseCode=="abuse") log.warn "Dynamic DNS access for the hostname has been blocked due to failure to interpret previous responses correctly."
-		else if(responseCode=="911") log.warn "An error happened on our end. Wait 5 minutes and retry."
 	}
+	catch (Exception e) {
+        log.debug "HttpPost Error: ${e}"
+	} 
 }
