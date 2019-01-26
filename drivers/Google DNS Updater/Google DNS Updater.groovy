@@ -1,5 +1,5 @@
 /**
- *	Import URL:
+ *	Import URL: https://raw.githubusercontent.com/stephack/Hubitat/master/drivers/Google%20DNS%20Updater/Google%20DNS%20Updater.groovy
  *
  *  Google DNS Updater
  *
