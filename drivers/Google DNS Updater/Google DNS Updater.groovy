@@ -14,11 +14,13 @@
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  *  for the specific language governing permissions and limitations under the License.
  *
- *
+ *	1/27/19 - added LastUpdate and LastCheck state variable to keep track of ip updates/checks
+ * 			- fixed initial ip attribute setting that generated errors
+ * 			- thanks to @pdhruska for finding above deficiencies
  * 
  */
 
-def version() {"v1.1.20190126"}
+def version() {"v1.1.20190127"}
 
 metadata {
 	definition (name: "Google DNS Updater", namespace: "stephack", author: "Stephan Hackett") {
@@ -92,11 +94,15 @@ def getIp(){
 				log.warn "Did not received valid data from IP check!"
 			}
 			else {
+				def now = new Date().format('MM/dd/yyyy h:mm a',location.timeZone)
+				state.lastCheck=now
 				if(logEnable) log.debug "Received IP: " + response.data
 				if(response.data==device.currentValue("ip")){
 					if(logEnable) log.debug "Ip has not changed. No need to send update request"
 				}
-				else updateGoogle(response.data)
+				else{
+					updateGoogle(response.data)
+				}
 			}
 		}
 	}
@@ -107,6 +113,7 @@ def getIp(){
 
 def updateGoogle(myIp){
 	if(logEnable) log.debug "Post URL: https://${username}:${password}@domains.google.com/nic/update?hostname=${hostname}&myip=${myIp}"
+	def now = new Date().format('MM/dd/yyyy h:mm a',location.timeZone)
 	def params = [
 		uri: "https://${username}:${password}@domains.google.com/nic/update?hostname=${hostname}&myip=${myIp}",
         contentType: "text/html",
@@ -122,8 +129,12 @@ def updateGoogle(myIp){
 			else if(responseCode.contains("good")){
 				log.info "Ip successfully updated to: " + myIp
 				sendEvent(name: "ip", value: myIp)
+				state.lastUpdate=now
 			}
-			else if(responseCode.contains("nochg")) log.warn "The supplied IP address is already set for this host. You should not attempt another update until your IP address changes."
+			else if(responseCode.contains("nochg")){
+				log.warn "The supplied IP address is already set for this host. You should not attempt another update until your IP address changes."
+				sendEvent(name: "ip", value: myIp)
+			}
 			else if(responseCode=="nohost")	log.warn "The hostname does not exist, or does not have Dynamic DNS enabled."
 			else if(responseCode=="badauth") log.warn "The username / password combination is not valid for the specified host."
 			else if(responseCode=="notfqdn") log.warn "The supplied hostname is not a valid fully-qualified domain name."
