@@ -8,6 +8,8 @@
  *	Author: SmartThings, modified by Bruce Ravenel, Dale Coffing, Stephan Hackett
  * 
  *
+ *	02/10/19 - setColor Level is no longer required (can be left blank)
+ *
  *  02/07/19 - fixed Set Color bug (missing level option)
  *
  *	01/14/19 - updated logging output to appropriate type (info vs debug)
@@ -76,7 +78,7 @@
 
 import hubitat.helper.RMUtils
 
-def version(){"v0.2.190207"}
+def version(){"v0.2.190210"}
 
 definition(
     name: "ABC Button Mapping",
@@ -159,19 +161,25 @@ def getButtonSections(buttonNumber) {
         	//
     section(title: myDetail.secLabel, hideable: true, hidden: !(shallHide("${myDetail.id}${buttonNumber}"))) {
 				if(showPush(myDetail.desc)) input "${myDetail.id}${buttonNumber}_pushed", myDetail.cap, title: "When Pushed", multiple: myDetail.mul, required: false, submitOnChange: collapseAll, options: myDetail.opt
-				if(myDetail.sub && isReq("${myDetail.id}${buttonNumber}_pushed")) input "${myDetail.sub}${buttonNumber}_pushed", myDetail.subType, title: myDetail.sTitle, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_pushed"), description: myDetail.sDesc, options: myDetail.subOpt
-                if(myDetail.sub2 && isReq("${myDetail.id}${buttonNumber}_pushed")) input "${myDetail.sub2}${buttonNumber}_pushed", myDetail.subType, title: myDetail.s2Title, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_pushed"), description: myDetail.s2Desc, options: myDetail.subOpt
-                if(myDetail.sub3 && isReq("${myDetail.id}${buttonNumber}_pushed")) input "${myDetail.sub3}${buttonNumber}_pushed", myDetail.subType, title: myDetail.s3Title, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_pushed"), description: myDetail.s3Desc, options: myDetail.subOpt
+				if(myDetail.sub && isReq("${myDetail.id}${buttonNumber}_pushed")) input "${myDetail.sub}${buttonNumber}_pushed", myDetail.subType, title: myDetail.sTitle, multiple: false, required: !myDetail.sNotReq, description: myDetail.sDesc, options: myDetail.subOpt
+                if(myDetail.sub2 && isReq("${myDetail.id}${buttonNumber}_pushed")) input "${myDetail.sub2}${buttonNumber}_pushed", myDetail.subType, title: myDetail.s2Title, multiple: false, required: !myDetail.s2NotReq, description: myDetail.s2Desc, options: myDetail.subOpt
+                if(myDetail.sub3 && isReq("${myDetail.id}${buttonNumber}_pushed")) input "${myDetail.sub3}${buttonNumber}_pushed", myDetail.subType, title: myDetail.s3Title, multiple: false, required: !myDetail.s3NotReq, description: myDetail.s3Desc, options: myDetail.subOpt
 				
         		if(showHeld(myDetail.desc)) input "${myDetail.id}${buttonNumber}_held", myDetail.cap, title: "When Held", multiple: myDetail.mul, required: false, submitOnChange: collapseAll, options: myDetail.opt
-                if(myDetail.sub && isReq("${myDetail.id}${buttonNumber}_held")) input "${myDetail.sub}${buttonNumber}_held", myDetail.subType, title: myDetail.sTitle, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_held"), description: myDetail.sDesc, options: myDetail.subOpt
-                	
-        		if(showDouble(myDetail.desc)) input "${myDetail.id}${buttonNumber}_doubleTapped", myDetail.cap, title: "When Double Tapped", multiple: myDetail.mul, required: false, submitOnChange: collapseAll, options: myDetail.opt
-                if(myDetail.sub && isReq("${myDetail.id}${buttonNumber}_doubleTapped")) input "${myDetail.sub}${buttonNumber}_doubleTapped", myDetail.subType, title: myDetail.sTitle, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_held"), description: myDetail.sDesc, options: myDetail.subOpt
-                
+                if(myDetail.sub && isReq("${myDetail.id}${buttonNumber}_held")) input "${myDetail.sub}${buttonNumber}_held", myDetail.subType, title: myDetail.sTitle, multiple: false, required: !myDetail.sNotReq, description: myDetail.sDesc, options: myDetail.subOpt
+                if(myDetail.sub2 && isReq("${myDetail.id}${buttonNumber}_held")) input "${myDetail.sub2}${buttonNumber}_held", myDetail.subType, title: myDetail.s2Title, multiple: false, required: !myDetail.s2NotReq, description: myDetail.s2Desc, options: myDetail.subOpt
+                if(myDetail.sub3 && isReq("${myDetail.id}${buttonNumber}_held")) input "${myDetail.sub3}${buttonNumber}_held", myDetail.subType, title: myDetail.s3Title, multiple: false, required: !myDetail.s3NotReq, description: myDetail.s3Desc, options: myDetail.subOpt
+        		
+				if(showDouble(myDetail.desc)) input "${myDetail.id}${buttonNumber}_doubleTapped", myDetail.cap, title: "When Double Tapped", multiple: myDetail.mul, required: false, submitOnChange: collapseAll, options: myDetail.opt
+                if(myDetail.sub && isReq("${myDetail.id}${buttonNumber}_doubleTapped")) input "${myDetail.sub}${buttonNumber}_doubleTapped", myDetail.subType, title: myDetail.sTitle, multiple: false, required: !myDetail.sNotReq, description: myDetail.sDesc, options: myDetail.subOpt
+                if(myDetail.sub2 && isReq("${myDetail.id}${buttonNumber}_doubleTapped")) input "${myDetail.sub2}${buttonNumber}_doubleTapped", myDetail.subType, title: myDetail.s2Title, multiple: false, required: !myDetail.s2NotReq, description: myDetail.s2Desc, options: myDetail.subOpt
+                if(myDetail.sub3 && isReq("${myDetail.id}${buttonNumber}_doubleTapped")) input "${myDetail.sub3}${buttonNumber}_doubleTapped", myDetail.subType, title: myDetail.s3Title, multiple: false, required: !myDetail.s3NotReq, description: myDetail.s3Desc, options: myDetail.subOpt
+		
         		if(showRelease(myDetail.desc)) input "${myDetail.id}${buttonNumber}_released", myDetail.cap, title: "When Released", multiple: myDetail.mul, required: false, submitOnChange: collapseAll, options: myDetail.opt
-                if(myDetail.sub && isReq("${myDetail.id}${buttonNumber}_released")) input "${myDetail.sub}${buttonNumber}_released", myDetail.subType, title: myDetail.sTitle, multiple: false, required: isReq("${myDetail.id}${buttonNumber}_released"), description: myDetail.sDesc, options: myDetail.subOpt
-			}
+                if(myDetail.sub && isReq("${myDetail.id}${buttonNumber}_released")) input "${myDetail.sub}${buttonNumber}_released", myDetail.subType, title: myDetail.sTitle, multiple: false, required: !myDetail.sNotReq, description: myDetail.sDesc, options: myDetail.subOpt
+                if(myDetail.sub2 && isReq("${myDetail.id}${buttonNumber}_released")) input "${myDetail.sub2}${buttonNumber}_released", myDetail.subType, title: myDetail.s2Title, multiple: false, required: !myDetail.s2NotReq, description: myDetail.s2Desc, options: myDetail.subOpt
+                if(myDetail.sub3 && isReq("${myDetail.id}${buttonNumber}_released")) input "${myDetail.sub3}${buttonNumber}_released", myDetail.subType, title: myDetail.s3Title, multiple: false, required: !myDetail.s3NotReq, description: myDetail.s3Desc, options: myDetail.subOpt
+		}
             if(i==3) section("\n"+getFormat("header", "${getImage("Dimmers", "45")}"+" DIMMERS")){}
             if(i==9) section("\n"+getFormat("header", "${getImage("Color", "45")}"+" COLOR LIGHTS")){}
             if(i==11) section("\n"+getFormat("header", "${getImage("Speakers", "45")}"+" SPEAKERS")){}
@@ -342,7 +350,7 @@ def getPrefDetails(){
          [id:'lightsRamp_', sOrder:9, desc:'Ramp ', comm:rampUp, sub:"valDir", subType:"enum", subOpt:['up','down'], type:"hasSub", secLabel: getFormat("section", "Ramp Up/Down"), cap: "capability.changeLevel", sTitle: "Ramp Direction (Up/Down)", sDesc:"Up or Down", mul: true],
          
          [id:'lightColorTemp_', sOrder:10, desc:'Set Light Color Temp to ', comm:colorSetT, sub:"valColorTemp", subType:"number", type:"hasSub", secLabel: getFormat("section", "Set Temperature"), cap: "capability.colorTemperature", sTitle: "Color Temp", sDesc:"2000 to 9000", mul: true],
-         [id:'lightColor_', sOrder:11, desc:'Set Light Color H:', comm:colorSet, sub:"valHue", subType:"number", sub2:"valSat", sub3:"valLvl", type:"hasSub", secLabel: getFormat("section", "Set Color"), cap: "capability.colorControl", sTitle: "Hue", s2Title: "Saturation", s3Title: "Lvl", sDesc:"0 to 100", s2Desc:"0 to 100", s3Desc:"0 to 100", mul: true],
+         [id:'lightColor_', sOrder:11, desc:'Set Light Color H:', comm:colorSet, sub:"valHue", subType:"number", sub2:"valSat", sub3:"valLvl", type:"hasSub", secLabel: getFormat("section", "Set Color"), cap: "capability.colorControl", sTitle: "Hue", s2Title: "Saturation", s3Title: "Lvl", sDesc:"0 to 100", s2Desc:"0 to 100", s3Desc:"0 to 100", mul: true, s3NotReq:true],
      	          
          [id:"speakerpp_", sOrder:12, desc:'Toggle Play/Pause', comm:speakerplaystate, type:"normal", secLabel: getFormat("section", "Toggle Play/Pause"), cap: "capability.musicPlayer", mul: true],
      	 [id:'speakervu_', sOrder:13, desc:'Volume +', comm:levelUp, sub:"valSpeakU", subType:"number", type:"hasSub", secLabel: getFormat("section", "Increase Volume By"), cap: "capability.musicPlayer", sTitle: "Increase by", sDesc:"0 to 15", mul: true],
@@ -449,7 +457,7 @@ def colorSet(devices,hueVal,satVal,lvlVal) {
     def myColor = [:]
     myColor.hue = hueVal.toInteger()
     myColor.saturation = satVal.toInteger()
-    myColor.level = lvlVal.toInteger()
+    if(lvlVal) myColor.level = lvlVal.toInteger()
     devices.setColor(myColor)//([hue:hueVal,saturation:satVal,level:50]) 
 }
 
