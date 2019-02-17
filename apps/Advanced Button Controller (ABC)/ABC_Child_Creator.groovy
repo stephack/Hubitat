@@ -8,6 +8,10 @@
  *	Author: SmartThings, modified by Bruce Ravenel, Dale Coffing, Stephan Hackett
  * 
  *
+ *	02/17/19 - updated Button Description for rules to show Rule name instead of Rule number
+ * 			 - Button Descriptions will now be surrounded by [] for better visibility
+ * 			 - Action details are now stored in a state value to allow for better efficiency
+ *
  *	02/10/19 - setColor Level is no longer required (can be left blank)
  *
  *  02/07/19 - fixed Set Color bug (missing level option)
@@ -78,7 +82,7 @@
 
 import hubitat.helper.RMUtils
 
-def version(){"v0.2.190210"}
+def version(){"v0.2.190217"}
 
 definition(
     name: "ABC Button Mapping",
@@ -156,8 +160,9 @@ def getButtonSections(buttonNumber) {
 	return {    	
         def myDetail
         section(getFormat("header", "${getImage("Switches", "45")}"+" SWITCHES")){}
+		state.details=getPrefDetails()
         for(i in 1..28) {//Build 1st 28 Button Config Options
-        	myDetail = getPrefDetails().find{it.sOrder==i}
+        	myDetail = state.details.find{it.sOrder==i}
         	//
     section(title: myDetail.secLabel, hideable: true, hidden: !(shallHide("${myDetail.id}${buttonNumber}"))) {
 				if(showPush(myDetail.desc)) input "${myDetail.id}${buttonNumber}_pushed", myDetail.cap, title: "When Pushed", multiple: myDetail.mul, required: false, submitOnChange: collapseAll, options: myDetail.opt
@@ -292,9 +297,16 @@ def getDescDetails(bNum, type){
     else {
     	def formattedPage =""
     	preferenceNames.each {eachPref->
-        	def prefDetail = getPrefDetails().find{eachPref.key.contains(it.id)}	//gets decription of action being performed(eg Turn On)
-        	def prefDevice = " : ${eachPref.value}" - "[" - "]"						//name of device the action is being performed on (eg Bedroom Fan)
-            def prefSubValue = settings[prefDetail.sub + numType]?:"(!Missing!)"
+        	def prefDetail = state.details.find{eachPref.key.contains(it.id)}	//gets decription of action being performed(eg Turn On)
+        						
+			def prefDevice		//name of device the action is being performed on (eg Bedroom Fan)
+			if(prefDetail.sub == "valRule"){
+				prefDevice = " : " + getRuleName(eachPref.value)	//extracts rules name (instead if number) for button description
+			}
+			else {
+				prefDevice = " : ${eachPref.value}"// was only needed to cleanup display in ST..not necessary in HE->           - "[" - "]"	
+			}
+			def prefSubValue = settings[prefDetail.sub + numType]?:"(!Missing!)"
             def sub2Value = settings[prefDetail.sub2 + numType]
             def sub3Value = settings[prefDetail.sub3 + numType]
             if(sub2Value) prefSubValue += ", S: ${sub2Value}"
@@ -308,8 +320,24 @@ def getDescDetails(bNum, type){
 }
 
 def getRules(){
-	def rules = RMUtils.getRuleList()
- 	return rules
+	rules = RMUtils.getRuleList()
+	//converts rules list to easily parsed format and stores in state.rules for easy access
+	state.rules=[:] 
+	rules.each{rule->
+		rule.each{pair->
+			state.rules[pair.key]=pair.value 
+		}
+	}
+	////////////////////////////////////////////////////
+	return rules
+}
+
+def getRuleName(num){	//allows button descriptions for RuleAPI controls to show Rule Name instead of Rule Number
+	def holder=[]
+	num.each{ruleNum->
+		holder << state.rules.find{it.key==ruleNum}.value
+	}
+	return holder
 }
 
 def installed() {
@@ -330,6 +358,7 @@ def initialize() {
 	subscribe(buttonDevice, "doubleTapped", buttonEvent)
     subscribe(buttonDevice, "released", buttonEvent)
     state.lastshadesUp = true
+	state.details=getPrefDetails()
 }
 
 def defaultLabel() {
@@ -418,7 +447,7 @@ def buttonEvent(evt) {
         
     	def preferenceNames = settings.findAll{it.key.contains("_${buttonNumber}_${pressType}")}
     	preferenceNames.each{eachPref->
-        	def prefDetail = getPrefDetails()?.find{eachPref.key.contains(it.id)}		//returns the detail map of id,desc,comm,sub
+        	def prefDetail = state.details?.find{eachPref.key.contains(it.id)}		//returns the detail map of id,desc,comm,sub
         	def PrefSubValue = settings["${prefDetail.sub}${buttonNumber}_${pressType}"] //value of subsetting (eg 100)
             def PrefSub2Value = settings["${prefDetail.sub2}${buttonNumber}_${pressType}"] //value of subsetting (eg 100)
             def PrefSub3Value = settings["${prefDetail.sub3}${buttonNumber}_${pressType}"]	//value of subsetting (eg 100)
