@@ -108,6 +108,7 @@ preferences {
 }
 
 def chooseButton() {
+	state.details=getPrefDetails()
 	dynamicPage(name: "chooseButton", install: true, uninstall: true) {
 		section(){
 				def appHead = "<img src=https://raw.githubusercontent.com/stephack/Hubitat/master/resources/images/abc2.png height=80 width=80> \n${checkForUpdate()}"
@@ -160,7 +161,7 @@ def getButtonSections(buttonNumber) {
 	return {    	
         def myDetail
         section(getFormat("header", "${getImage("Switches", "45")}"+" SWITCHES")){}
-		state.details=getPrefDetails()
+		//state.details=getPrefDetails()
         for(i in 1..28) {//Build 1st 28 Button Config Options
         	myDetail = state.details.find{it.sOrder==i}
         	//
