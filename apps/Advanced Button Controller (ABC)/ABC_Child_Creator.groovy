@@ -82,7 +82,7 @@
 
 import hubitat.helper.RMUtils
 
-def version(){"v0.2.190217"}
+def version(){"v0.2.190218"}
 
 definition(
     name: "ABC Button Mapping",
@@ -334,6 +334,7 @@ def getRules(){
 }
 
 def getRuleName(num){	//allows button descriptions for RuleAPI controls to show Rule Name instead of Rule Number
+	getRules()
 	def holder=[]
 	num.each{ruleNum->
 		holder << state.rules.find{it.key==ruleNum}.value
