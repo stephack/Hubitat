@@ -8,6 +8,8 @@
  *	Author: SmartThings, modified by Bruce Ravenel, Dale Coffing, Stephan Hackett
  * 
  *
+ *	02/19/19 - rules api bug squashed
+ *
  *	02/17/19 - updated Button Description for rules to show Rule name instead of Rule number
  * 			 - Button Descriptions will now be surrounded by [] for better visibility
  * 			 - Action details are now stored in a state value to allow for better efficiency
@@ -82,7 +84,7 @@
 
 import hubitat.helper.RMUtils
 
-def version(){"v0.2.190218"}
+def version(){"v0.2.190219"}
 
 definition(
     name: "ABC Button Mapping",
@@ -337,7 +339,7 @@ def getRuleName(num){	//allows button descriptions for RuleAPI controls to show 
 	getRules()
 	def holder=[]
 	num.each{ruleNum->
-		holder << state.rules.find{it.key==ruleNum}.value
+		holder << state.rules.find{it.key==ruleNum.toInteger()}.value
 	}
 	return holder
 }
