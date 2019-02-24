@@ -1,5 +1,5 @@
 /**
- *  Sonos Playlist Controller 
+ *  Sonos Playlist Controller (old HE Version)
  *
  *  Copyright 2017 Stephan Hackett
  *
