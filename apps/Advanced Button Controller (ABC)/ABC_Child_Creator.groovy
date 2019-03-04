@@ -7,6 +7,7 @@
  *
  *	Author: SmartThings, modified by Bruce Ravenel, Dale Coffing, Stephan Hackett
  * 
+ *  03/05/19 - added disable option
  *
  *	02/19/19 - rules api bug squashed
  *
@@ -150,6 +151,7 @@ def chooseButton() {
 			input "days", "enum", title: "Only on certain days of the week", multiple: true, required: false,
 					options: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 			input "modes", "mode", title: "Only when mode is", multiple: true, required: false
+			input "disable", "bool", title: "Disable This Mapping", required: false
 		}
 	}
 }
@@ -655,12 +657,17 @@ def cyclePlaylist(devices){
 }
 // execution filter methods
 private getAllOk() {
-	modeOk && daysOk && timeOk
+	modeOk && daysOk && timeOk && disableOk
 }
 
 private getModeOk() {
 	def result = !modes || modes.contains(location.mode)
 	if(logEnable) log.debug "modeOk = $result"
+	result
+}
+private getDisableOk() {
+	def result = !disable
+	if(logEnable) log.debug "disableOk = $result"
 	result
 }
 
