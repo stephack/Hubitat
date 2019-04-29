@@ -504,8 +504,8 @@ def colorSetT(devices, temp) {
 
 def adjustFan(device) {
 	log.info "Adjusting: $device"
-	def currentLevel = device.currentLevel
-	if(device.currentSwitch == 'off') device.setLevel(15)
+	def currentLevel = device.currentLevel[0]
+	if(device.currentSwitch[0] == 'off') device.setLevel(15)
 	else if (currentLevel < 34) device.setLevel(50)
   	else if (currentLevel < 67) device.setLevel(90)
 	else device.off()
