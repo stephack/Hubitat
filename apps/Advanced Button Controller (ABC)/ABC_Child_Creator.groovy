@@ -8,6 +8,8 @@
  *	Author: SmartThings, modified by Bruce Ravenel, Dale Coffing, Stephan Hackett
  * 
  *
+ *	04/29/19 - fixed small UI bug handling '0' level values
+ *
  *	02/19/19 - rules api bug squashed
  *
  *	02/17/19 - updated Button Description for rules to show Rule name instead of Rule number
@@ -84,7 +86,7 @@
 
 import hubitat.helper.RMUtils
 
-def version(){"v0.2.190219"}
+def version(){"v0.2.190429"}
 
 definition(
     name: "ABC Button Mapping",
@@ -309,7 +311,8 @@ def getDescDetails(bNum, type){
 			else {
 				prefDevice = " : ${eachPref.value}"// was only needed to cleanup display in ST..not necessary in HE->           - "[" - "]"	
 			}
-			def prefSubValue = settings[prefDetail.sub + numType]?:"(!Missing!)"
+			def thisSub = settings[prefDetail.sub + numType]
+			def prefSubValue = thisSub != null? thisSub:"(!Missing!)"
             def sub2Value = settings[prefDetail.sub2 + numType]
             def sub3Value = settings[prefDetail.sub3 + numType]
             if(sub2Value) prefSubValue += ", S: ${sub2Value}"
