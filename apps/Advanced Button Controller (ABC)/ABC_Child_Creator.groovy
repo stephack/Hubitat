@@ -8,7 +8,7 @@
  *	Author: SmartThings, modified by Bruce Ravenel, Dale Coffing, Stephan Hackett
  * 
  *	05/18/19 - Speech notifications now allow random messages to be sent (Use ; to separate options)
- *			 - cycleFan modified to no longer use numeric setSpeed values as trhis may be deprectated by HE for future fan devices
+ *			 - cycleFan modified to no longer use numeric setSpeed values as this may be deprecated by HE for future fan devices
  *
  *	04/29/19 - fixed small UI bug handling '0' level values
  *			 - updated adjustFans method
