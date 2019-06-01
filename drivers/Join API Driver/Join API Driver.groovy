@@ -160,7 +160,7 @@ def deviceNotification(message) {
     def params = [
         uri: apiUri + apiParams,
     ]
-    log.info params
+    //log.info params
   	
     if ((apiKey =~ /[A-Za-z0-9]{30}/)) {
     	httpGet(params){response ->
