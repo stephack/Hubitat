@@ -16,20 +16,21 @@
 *
 */
 
-def version() {"v1.0.20190601"}
+def version() {"v1.0.20190602"}
 
 preferences {
-    input("apiKey", "text", title: "API Key:", description: "Join API Key")
+    input("apiKey", "text", title: "Join API Key:", description: "")
     if(getValidated()){
   		input("deviceName", "enum", title: "Select Device:", description: "", multiple: true, required: false, options: getValidated("deviceList"))
         input("myTitle", "text", title: "Notification Title:", description: "")
-        input("myImage", "text", title: "Icon URI:", description: "Image to be displayed in notification as well as status bar (transparent png preferred)")
-  		input("url", "text", title: "URL:", description: "URL to be opened when Notification is clicked:")
-		input("sound", "text", title: "Sound URI:", description: "URL of notification sound to be played:")
-		input("image", "text", title: "Image URI:", description: "URL of image to be displayed in the notification body:")
-		input("myApp", "text", title: "Open App by Name:", description: "Name of Android app to open:")
-		input("myPackage", "text", title: "Open App by Package:", description: "Name of Android Package to open:")
-		input("action", "text", title: "Actions for Notification:", description: "separate multiple actions with commas:")
+		input("myImage", "text", title: "Icon URI:", description: "(Image to be displayed in notification as well as status bar)")
+  		input("url", "text", title: "URL:", description: "(URL to be opened when Notification is clicked)")
+		input("sound", "text", title: "Sound URI:", description: "(URL of notification sound to be played)")
+		input("image", "text", title: "Image URI:", description: "(URL of image to be displayed in the notification body)")
+		input("myApp", "text", title: "Open App by Name:", description: "(Name of Android app to open)")
+		input("myPackage", "text", title: "Open App by Package:", description: "(Name of Android Package to open)")
+		input("smsnumber", "number", title: "Phone # to send SMS text TO:", description: "(Text will be sent FROM the Join Device selected above)")
+		input("action", "text", title: "Actions for Notification:", description: "(separate multiple actions with commas)")
     }
 }
 
@@ -113,7 +114,7 @@ def speak(message) {
     def params = [
         uri: apiUri + apiParams,
     ]
-    log.info params
+    //log.info params
   	
     if ((apiKey =~ /[A-Za-z0-9]{30}/)) {
     	httpGet(params){response ->
@@ -151,6 +152,7 @@ def deviceNotification(message) {
     if(image) apiParams += "&image=" + URLEncoder.encode(image, "UTF-8")
     if(myApp) apiParams += "&app=" + URLEncoder.encode(myApp, "UTF-8")
 	if(myPackage) apiParams += "&appPackage=" + URLEncoder.encode(myPackage, "UTF-8")
+	if(smsnumber) apiParams += "&smsnumber=" + smsnumber + "&smstext=" + URLEncoder.encode(message, "UTF-8")
 	
 	if(action){
 		action = action.replace(",", "|||")
@@ -160,7 +162,7 @@ def deviceNotification(message) {
     def params = [
         uri: apiUri + apiParams,
     ]
-    //log.info params
+    log.info params
   	
     if ((apiKey =~ /[A-Za-z0-9]{30}/)) {
     	httpGet(params){response ->
