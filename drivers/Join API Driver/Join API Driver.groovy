@@ -16,7 +16,7 @@
 *
 */
 
-def version() {"v1.0.20190603"}
+def version() {"v1.0.20190603a"}
 
 preferences {
     input("apiKey", "text", title: "Join API Key:", description: "")
@@ -37,7 +37,7 @@ preferences {
 }
 
 metadata {
-  	definition (name: "Join API Device", namespace: "stephack", author: "Stephan Hackett") {
+  	definition (name: "Join API Device", namespace: "stephack", author: "Stephan Hackett", importUrl: "https://raw.githubusercontent.com/stephack/Hubitat/master/drivers/Join%20API%20Driver/Join%20API%20Driver.groovy") {
     	capability "Notification"
     	capability "Actuator"
     	capability "Speech Synthesis"
