@@ -23,7 +23,7 @@ preferences {
     if(getValidated()){
   		input("deviceName", "enum", title: "Select Device:", description: "", multiple: true, required: false, options: getValidated("deviceList"))
         input("myTitle", "text", title: "Notification Title:", description: "")
-		input("myImage", "text", title: "Icon URI:", description: "(Image to be displayed in notification as well as status bar)")
+		input("myImage", "text", title: "Status Bar Icon URI:", description: "(Image to be displayed in the status bar)")
   		input("url", "text", title: "URL:", description: "(URL to be opened when Notification is clicked)")
 		input("sound", "text", title: "Sound URI:", description: "(URL of notification sound to be played)")
 		input("image", "text", title: "Image URI:", description: "(URL of image to be displayed in the notification body)")
