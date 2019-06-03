@@ -16,7 +16,7 @@
 *
 */
 
-def version() {"v1.0.20190602"}
+def version() {"v1.0.20190603"}
 
 preferences {
     input("apiKey", "text", title: "Join API Key:", description: "")
@@ -31,6 +31,8 @@ preferences {
 		input("myPackage", "text", title: "Open App by Package:", description: "(Name of Android Package to open)")
 		input("smsnumber", "number", title: "Phone # to send SMS text TO:", description: "(Text will be sent FROM the Join Device selected above)")
 		input("action", "text", title: "Actions for Notification:", description: "(separate multiple actions with commas)")
+		input("logEnable", "bool", title: "Enable Debug Logging?:", required: true)
+
     }
 }
 
@@ -57,49 +59,50 @@ def initialize() {
 }
 
 def getValidated(type){
-    if(type=="deviceList"){log.debug "Generating Device List..."}
-	else {log.debug "Validating Key..."}
-    
-    def validated = false
-	
-    def params = [
-        uri: "https://joinjoaomgcd.appspot.com/_ah/api/registration/v1/listDevices?apikey=${apiKey}",
-  	]
-    //log.info params
-    
-    if ((apiKey =~ /[A-Za-z0-9]{30}/)) {
-        try{
-        	httpGet(params){response ->
-      			if(response.status != 200) {
-        			log.error "Received HTTP error ${response.status}. Check your keys!"
-      			}
-      			else {
-                    if(type=="deviceList"){
-                        log.debug "Device list generated"
-                        deviceOptions = response.data.records.deviceName
-                        //log.info deviceOptions
-                    }
-                    else {
-                        log.debug "Keys validated"
-                        validated = true
-                    }
-      			}
-    		}
-        }
-        catch (Exception e) {
-        	log.error "An invalid key was probably entered. Join API Server Returned: ${e}"
-		} 
-    }
-    else {
-    	log.error "API key '${apiKey}' is not properly formatted!"
-  	}
-    if(type=="deviceList") return deviceOptions
-    return validated
-    
+	if(apiKey){
+		if(type=="deviceList" && logEnable){log.debug "Generating Device List..."}
+		else if(logEnable) log.debug "Validating Key..."
+
+		def validated = false
+
+		def params = [
+			uri: "https://joinjoaomgcd.appspot.com/_ah/api/registration/v1/listDevices?apikey=${apiKey}",
+		]
+		if(logEnable) log.debug "Validation params: ${params}"
+
+		if ((apiKey =~ /[A-Za-z0-9]{30}/)) {
+			try{
+				httpGet(params){response ->
+					if(response.status != 200) {
+						log.error "Received HTTP error ${response.status}. Check your keys!"
+					}
+					else {
+						if(type=="deviceList"){
+							if(logEnable) log.debug "Device list generated"
+							deviceOptions = response.data.records.deviceName
+							if(logEnable) log.debug "Device List: ${deviceOptions}"
+						}
+						else {
+							if(logEnable) log.debug "Keys validated"
+							validated = true
+						}
+					}
+				}
+			}
+			catch (Exception e) {
+				log.error "An invalid key was probably entered. Join API Server Returned: ${e}"
+			} 
+		}
+		else {
+			log.error "API key '${apiKey}' is not properly formatted!"
+		}
+		if(type=="deviceList") return deviceOptions
+		return validated
+	}
 }
 
 def speak(message) {
-    if (deviceName) { log.debug "Sending Speech Request: ${message} to Device: $deviceName"}
+    if (deviceName) { log.info "Sending Speech Request: ${message} to Device: $deviceName"}
 
     def apiUri =  "https://joinjoaomgcd.appspot.com/_ah/api/messaging/v1/sendPush?apikey=${apiKey}"
     def apiParams = ""
@@ -114,7 +117,7 @@ def speak(message) {
     def params = [
         uri: apiUri + apiParams,
     ]
-    //log.info params
+	if(logEnable) log.debug "Speak params: ${params}"
   	
     if ((apiKey =~ /[A-Za-z0-9]{30}/)) {
     	httpGet(params){response ->
@@ -122,7 +125,7 @@ def speak(message) {
         		log.error "Received HTTP error ${response.status}. Check your keys!"
       		}
       		else {
-        		log.debug "Message Received by Join API Server"
+        		if(logEnable) log.debug "Message Received by Join API Server"
       		}
     	}
   	}
@@ -132,8 +135,14 @@ def speak(message) {
 }
 
 def deviceNotification(message) {
-	
-  	if (deviceName) { log.debug "Sending Message: ${message} to Device: $deviceName"}
+	def actionInline = ""
+	if(message.contains("[A]")) {
+		def multiMessage = message.split("\\[A\\]")
+		message = multiMessage[0]
+		actionInline = multiMessage[1]
+	}
+	   
+	if (deviceName) { log.info "Sending Message: ${message} to Device: $deviceName"}
 
     def apiUri =  "https://joinjoaomgcd.appspot.com/_ah/api/messaging/v1/sendPush?apikey=${apiKey}"
     def apiParams = ""
@@ -154,7 +163,13 @@ def deviceNotification(message) {
 	if(myPackage) apiParams += "&appPackage=" + URLEncoder.encode(myPackage, "UTF-8")
 	if(smsnumber) apiParams += "&smsnumber=" + smsnumber + "&smstext=" + URLEncoder.encode(message, "UTF-8")
 	
-	if(action){
+	//Inline action overide actions listed in the preferences
+	if(actionInline != ""){
+		if(logEnable) log.debug "Inline actions found. Over-riding driver preferences."
+		action = actionInline.replace(",", "|||")
+		apiParams += "&actions=" + URLEncoder.encode(action, "UTF-8")
+	}	   
+	else if(action){
 		action = action.replace(",", "|||")
 		apiParams += "&actions=" + URLEncoder.encode(action, "UTF-8")
 	}
@@ -162,7 +177,7 @@ def deviceNotification(message) {
     def params = [
         uri: apiUri + apiParams,
     ]
-    log.info params
+    if(logEnable) log.debug params
   	
     if ((apiKey =~ /[A-Za-z0-9]{30}/)) {
     	httpGet(params){response ->
@@ -170,7 +185,7 @@ def deviceNotification(message) {
         		log.error "Received HTTP error ${response.status}. Check your keys!"
       		}
       		else {
-        		log.debug "Message Received by Join API Server"
+        		if(logEnable) log.debug "Message Received by Join API Server"
       		}
     	}
   	}
