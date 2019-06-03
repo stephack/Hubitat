@@ -16,7 +16,7 @@
 *
 */
 
-def version() {"v1.0.20190603a"}
+def version() {"v1.0.20190603b"}
 
 preferences {
     input("apiKey", "text", title: "Join API Key:", description: "")
@@ -154,7 +154,7 @@ def deviceNotification(message) {
 	if(deviceName) apiParams += "&deviceNames=${deviceName}"
     if(myTitle) apiParams += "&title=" + URLEncoder.encode(myTitle, "UTF-8")
     if(message) apiParams += "&text=" + URLEncoder.encode(message, "UTF-8")
-    if(myImage) apiParams += "&icon=" + URLEncoder.encode(myImage, "UTF-8")
+    if(myImage) apiParams += "&smallicon=" + URLEncoder.encode(myImage, "UTF-8")
     if(url) apiParams += "&url=" + URLEncoder.encode(url, "UTF-8")
 	
 	if(sound) apiParams += "&sound=" + URLEncoder.encode(sound, "UTF-8")
