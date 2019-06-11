@@ -21,7 +21,7 @@
 				- added multiple inline options (Title, Devices, Category, SMS#, Actions)
 */
 
-def version() {"v1.0.20190608"}
+def version() {"v1.0.20190611"}
 
 preferences {
 	input("apikey", "text", title: "Join API Key: <small><a href='https://joaoapps.com/join/api/' target='_blank'>[api docs here]</a></small>", description: "")
@@ -198,6 +198,7 @@ def buildMessage(message){
 	}
 	if(logEnable) log.debug "Custom Settings: " + myMap
 	current << myMap	//merge driver settings with custom setting
+	if(current.smsnumber) current["smstext"] = myMap.text	//when an smsnumber is included, set smstext to message
 	current.remove("logEnable")	//remove uneeded preferences
 	
 	if(current.actions){	//format actions using ||| delimiter as per api
