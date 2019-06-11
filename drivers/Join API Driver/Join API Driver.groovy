@@ -17,17 +17,25 @@
 *
 *	06/04/19 	- added Notification category
 *				- switch From GET requests to POST for added security
-				- switched to asynch calls for efficiency
-				- added multiple inline options (Title, Devices, Category, SMS#, Actions)
+*				- switched to asynch calls for efficiency
+*				- added multiple inline options (Title, Devices, Category, SMS#, Actions)
+*
+*	06/11/19	- fixed sms bug
+*			- added Notification Icon (if Status Bar icon is not set, this will set the image to both notification and status bar icon)
+*
+*
+*
+*
 */
 
-def version() {"v1.0.20190611"}
+def version() {"v1.0.20190611a"}
 
 preferences {
 	input("apikey", "text", title: "Join API Key: <small><a href='https://joaoapps.com/join/api/' target='_blank'>[api docs here]</a></small>", description: "")
     if(getValidated()){
   		input("deviceNames", "enum", title: "Select Device <b>[D]</b>:", description: "", multiple: true, required: false, options: getValidated("deviceList"))
         input("title", "text", title: "Notification Title <b>[T]</b>:", description: "")
+		input("icon", "text", title: "Notification Icon URI:", description: "(Notification image; and status bar icon if not set)")
 		input("smallicon", "text", title: "Status Bar Icon URI:", description: "(Image to be displayed in the status bar)")
   		input("url", "text", title: "URL:", description: "(URL to be opened when Notification is clicked)")
   		input("category", "text", title: "Notification Category <b>[C]</b>:", description: "(Android 8+ allows custom notication handling)")
