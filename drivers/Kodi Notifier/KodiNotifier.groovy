@@ -36,7 +36,7 @@ preferences {
 }
 
 metadata {
-  	definition (name: "Kodi Notifier", namespace: "stephack", author: "Stephan Hackett", importUrl: "") {
+  	definition (name: "Kodi Notifier", namespace: "stephack", author: "Stephan Hackett", importUrl: "https://raw.githubusercontent.com/stephack/Hubitat/master/drivers/Kodi%20Notifier/KodiNotifier.groovy") {
     	capability "Notification"
     	capability "Actuator"
   	}
