@@ -17,7 +17,7 @@
 def version() {"v1.0.20190706"}
 
 metadata {
-    definition (name: "Virtual Contact Sensor", namespace: "stephack", author: "Stephan Hackett") {
+    definition (name: "Virtual Contact Sensor", namespace: "stephack", author: "Stephan Hackett", importUrl: "https://raw.githubusercontent.com/stephack/Hubitat/master/drivers/Virtual%20Contact%20Sensor%20with%20Inversion/Virtual%20Contact%20Sensor/Virtual%20Contact%20Sensor.groovy") {
         capability "Actuator"
         capability "Sensor"
         capability "Contact Sensor"
