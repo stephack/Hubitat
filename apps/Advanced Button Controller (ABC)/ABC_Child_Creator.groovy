@@ -6,7 +6,9 @@
  *	ABC Child Creator for Advanced Button Controller
  *
  *	Author: SmartThings, modified by Bruce Ravenel, Dale Coffing, Stephan Hackett
- * 
+ *
+ *	08/14/19 - Send Http Requests (POST or GET - simple form encoded)
+ *
  *	05/18/19 - Speech notifications now allow random messages to be sent (Use ; to separate options)
  *			 - cycleFan modified to no longer use numeric setSpeed values as this may be deprecated by HE for future fan devices
  *
@@ -89,7 +91,7 @@
 
 import hubitat.helper.RMUtils
 
-def version(){"v0.2.190518"}
+def version(){"v0.2.190814"}
 
 definition(
     name: "ABC Button Mapping",
@@ -169,7 +171,7 @@ def getButtonSections(buttonNumber) {
         def myDetail
         section(getFormat("header", "${getImage("Switches", "45")}"+" SWITCHES")){}
 		//state.details=getPrefDetails()
-        for(i in 1..28) {//Build 1st 28 Button Config Options
+        for(i in 1..29) {//Build 1st 29 Button Config Options
         	myDetail = state.details.find{it.sOrder==i}
         	//
     section(title: myDetail.secLabel, hideable: true, hidden: !(shallHide("${myDetail.id}${buttonNumber}"))) {
@@ -411,7 +413,9 @@ def getPrefDetails(){
 		 [id:'cycleScenes_', sOrder:25, desc:'Cycle', comm:cycle, type:"normal", secLabel: getFormat("section", "Scenes (Cycle)"), cap: "device.SceneActivator", mul: true, isCycle: true],
          [id:"shadeAdjust_", sOrder:26,desc:'Adjust', comm:adjustShade, type:"normal", secLabel: getFormat("section", "Shades (Up/Down/Stop)"), cap: "capability.doorControl", mul: true],
          [id:'sirens_', sOrder:27, desc:'Toggle', comm:toggle, type:"normal", secLabel: getFormat("section", "Sirens (Toggle)"), cap: "capability.alarm", mul: true],
-         [id:"speechDevice_", sOrder:28, desc:'Send Msg To', comm:speechHandle, type:"normal", secLabel: getFormat("section", "Notifications (Speech):"), sub:"speechTxt", cap: "capability.speechSynthesis", subType:"text", sTitle: "Message To Speak:", sDesc:"Enter message to speak (Random messages: Use ; to separate choices)", mul: true],///set type to normal instead of sub so message text is not displayed
+         //[id:'httpRequest_', sOrder:28, desc:'Send Http Request', comm:hRequest, sub:"reqType", subType:"enum", subOpt:['POST', 'GET'], type:"hasSub", secLabel: getFormat("section", "Send Http Request"), cap: "text", sTitle:"Request Type", sDesc:"Request Type", mul: false],
+         [id:'httpRequest_', sOrder:28, desc:'Send: ', comm:hRequest, sub:"reqUrl", subType:"text", type:"hasSub", secLabel: getFormat("section", "Send Http Request"), cap: "enum", opt:['POST', 'GET'], sTitle:"HTTP URL", sDesc:"Enter complete url to send", mul: false],
+         [id:"speechDevice_", sOrder:29, desc:'Send Msg To', comm:speechHandle, type:"normal", secLabel: getFormat("section", "Notifications (Speech):"), sub:"speechTxt", cap: "capability.speechSynthesis", subType:"text", sTitle: "Message To Speak:", sDesc:"Enter message to speak (Random messages: Use ; to separate choices)", mul: true],///set type to normal instead of sub so message text is not displayed
 		 
 		 [id:"notifications_", desc:'Send Push Notification', comm:messageHandle, sub:"valNotify", type:"bool"],
      	 [id:"phone_", desc:'Send SMS', comm:smsHandle, sub:"notifications_", type:"normal"],
@@ -666,6 +670,28 @@ def cycle(devices, devIndex) {
 def cyclePlaylist(devices){
     devices.cycle()
 }
+
+def hRequest(reqType, myUrl){
+    def params = [
+        uri: myUrl,
+		contentType: 'application/x-www-form-urlencoded'
+    ]
+	
+    if(logEnable) log.debug "${reqType} - ${params}"
+	if(reqType == "POST") asynchttpPost('myPostResponse', params, [type: reqType])
+    if(reqType == "GET") asynchttpGet('myPostResponse', params, [type: reqType])
+  	  	
+}
+
+def myPostResponse(response,data){
+	if(response.status != 200) {
+		log.error "HTTP ${data["type"]} Request returned error ${response.status}. Check your URL!"
+	}
+    else {
+        if(logEnable) log.debug "HTTP ${data["type"]} Request sent successfully"
+    }
+}
+
 // execution filter methods
 private getAllOk() {
 	modeOk && daysOk && timeOk
