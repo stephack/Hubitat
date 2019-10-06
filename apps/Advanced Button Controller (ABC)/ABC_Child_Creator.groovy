@@ -7,6 +7,8 @@
  *
  *	Author: SmartThings, modified by Bruce Ravenel, Dale Coffing, Stephan Hackett
  *
+ *  10/06/19 - Added Auto as option under Cycle Fan Speed
+ *
  *	08/14/19 - Send Http Requests (POST or GET - simple form encoded)
  *
  *	05/18/19 - Speech notifications now allow random messages to be sent (Use ; to separate options)
@@ -91,7 +93,7 @@
 
 import hubitat.helper.RMUtils
 
-def version(){"v0.2.190814"}
+def version(){"v0.2.191006"}
 
 definition(
     name: "ABC Button Mapping",
@@ -400,7 +402,7 @@ def getPrefDetails(){
     	 [id:'speakermu_', sOrder:16, desc:'Mute', comm:speakermute, type:"normal", secLabel: getFormat("section", "Speakers Toggle Mute"), cap: "capability.musicPlayer", mul: true],
          [id:"musicPreset_", sOrder:17, desc:'Cycle Preset', comm:cyclePlaylist, type:"normal", secLabel: getFormat("section", "Preset to Cycle"), cap: "device.VirtualContainer", mul: true],         
          
-         [id:'fanSet_', sOrder:18, desc:'Set Fan to ', comm:setFan, sub:"valSpeed", subType:"enum", subOpt:['off','low','medium-low','medium','high'], type:"hasSub", secLabel: getFormat("section", "Set Speed"), cap: "capability.fanControl", sTitle: "Set Speed to", sDesc:"L/ML/M/H", mul: true],
+         [id:'fanSet_', sOrder:18, desc:'Set Fan to ', comm:setFan, sub:"valSpeed", subType:"enum", subOpt:['off','low','medium-low','medium','high','auto'], type:"hasSub", secLabel: getFormat("section", "Set Speed"), cap: "capability.fanControl", sTitle: "Set Speed to", sDesc:"L/ML/M/H/A", mul: true],
          [id:"fanCycle_", sOrder:19, desc:'Cycle Fan Speed', comm:cycleFan, type:"normal", secLabel: getFormat("section", "Cycle Speed"), cap: "capability.fanControl", mul: true],         
          [id:"fanAdjust_", sOrder:20,desc:'Adjust', comm:adjustFan, type:"normal", secLabel: getFormat("section", "Cycle Speed (Legacy)"), cap: "capability.switchLevel", mul: true],
          
