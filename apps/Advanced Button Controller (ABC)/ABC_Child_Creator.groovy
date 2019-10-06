@@ -7,7 +7,7 @@
  *
  *	Author: SmartThings, modified by Bruce Ravenel, Dale Coffing, Stephan Hackett
  *
- *  10/06/19 - Added Auto as option under Cycle Fan Speed
+ *      10/06/19 - Added Auto as option under Set Fan Speed
  *
  *	08/14/19 - Send Http Requests (POST or GET - simple form encoded)
  *
