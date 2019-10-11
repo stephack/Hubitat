@@ -14,10 +14,10 @@
  *
  *  Change History:
  *
- *    Date        Who            What
- *    ----        ---            ----
- *    2018-02-18  Dan Ogorchock  Original Creation
- *
+ *    Date        Who             What
+ *    ----        ---             ----
+ *    2018-02-18  Dan Ogorchock   Original Creation
+ *    2019-10-11  Stephan Hackett Added ContentType and Body inputs(very limited functionality)
  * 
  */
 metadata {
