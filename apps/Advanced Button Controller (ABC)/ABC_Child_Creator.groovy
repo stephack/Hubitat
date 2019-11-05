@@ -7,7 +7,9 @@
  *
  *	Author: SmartThings, modified by Bruce Ravenel, Dale Coffing, Stephan Hackett
  *
- *      10/06/19 - Added Auto as option under Set Fan Speed
+ *  11/05/19 - Added previousTrack support for speakers
+ *
+ *  10/06/19 - Added Auto as option under Set Fan Speed
  *
  *	08/14/19 - Send Http Requests (POST or GET - simple form encoded)
  *
@@ -93,7 +95,7 @@
 
 import hubitat.helper.RMUtils
 
-def version(){"v0.2.191006"}
+def version(){"v0.2.191105"}
 
 definition(
     name: "ABC Button Mapping",
@@ -173,7 +175,7 @@ def getButtonSections(buttonNumber) {
         def myDetail
         section(getFormat("header", "${getImage("Switches", "45")}"+" SWITCHES")){}
 		//state.details=getPrefDetails()
-        for(i in 1..29) {//Build 1st 29 Button Config Options
+        for(i in 1..30) {//Build 1st 30 Button Config Options
         	myDetail = state.details.find{it.sOrder==i}
         	//
     section(title: myDetail.secLabel, hideable: true, hidden: !(shallHide("${myDetail.id}${buttonNumber}"))) {
@@ -200,10 +202,10 @@ def getButtonSections(buttonNumber) {
             if(i==3) section("\n"+getFormat("header", "${getImage("Dimmers", "45")}"+" DIMMERS")){}
             if(i==9) section("\n"+getFormat("header", "${getImage("Color", "45")}"+" COLOR LIGHTS")){}
             if(i==11) section("\n"+getFormat("header", "${getImage("Speakers", "45")}"+" SPEAKERS")){}
-            if(i==17) section("\n"+getFormat("header", "${getImage("Fans", "45")}"+" FANS")){}
-            if(i==20) section("\n"+getFormat("header", "${getImage("Mode", "45")}"+" MODES")){}
-			if(i==22) section("\n"+getFormat("header", "${getImage("Rule", "45")}"+" RULE CONTROL")){}
-            if(i==23) section("\n"+getFormat("header", "${getImage("Other", "45")}"+" OTHER")){}
+            if(i==18) section("\n"+getFormat("header", "${getImage("Fans", "45")}"+" FANS")){}
+            if(i==21) section("\n"+getFormat("header", "${getImage("Mode", "45")}"+" MODES")){}
+			if(i==23) section("\n"+getFormat("header", "${getImage("Rule", "45")}"+" RULE CONTROL")){}
+            if(i==24) section("\n"+getFormat("header", "${getImage("Other", "45")}"+" OTHER")){}
         }
 		
 		section(getFormat("section", "Notifications (SMS):"), hideable:true , hidden: !shallHide("notifications_${buttonNumber}")) {
@@ -399,25 +401,25 @@ def getPrefDetails(){
      	 [id:'speakervu_', sOrder:13, desc:'Volume +', comm:levelUp, sub:"valSpeakU", subType:"number", type:"hasSub", secLabel: getFormat("section", "Increase Volume By"), cap: "capability.musicPlayer", sTitle: "Increase by", sDesc:"0 to 15", mul: true],
      	 [id:"speakervd_", sOrder:14, desc:'Volume -', comm:levelDown, sub:"valSpeakD", subType:"number", type:"hasSub", secLabel: getFormat("section", "Decrease Volume By"), cap: "capability.musicPlayer", sTitle: "Decrease by", sDesc:"0 to 15", mul: true],
          [id:'speakernt_', sOrder:15, desc:'Next Track', comm:speakernexttrack, type:"normal", secLabel: getFormat("section", "Go to Next Track"), cap: "capability.musicPlayer", mul: true],
-    	 [id:'speakermu_', sOrder:16, desc:'Mute', comm:speakermute, type:"normal", secLabel: getFormat("section", "Speakers Toggle Mute"), cap: "capability.musicPlayer", mul: true],
-         [id:"musicPreset_", sOrder:17, desc:'Cycle Preset', comm:cyclePlaylist, type:"normal", secLabel: getFormat("section", "Preset to Cycle"), cap: "device.VirtualContainer", mul: true],         
+         [id:'speakerpt_', sOrder:16, desc:'Previous Track', comm:speakerprevioustrack, type:"normal", secLabel: getFormat("section", "Go to Previous Track"), cap: "capability.musicPlayer", mul: true],
+         [id:'speakermu_', sOrder:17, desc:'Mute', comm:speakermute, type:"normal", secLabel: getFormat("section", "Speakers Toggle Mute"), cap: "capability.musicPlayer", mul: true],
+         [id:"musicPreset_", sOrder:18, desc:'Cycle Preset', comm:cyclePlaylist, type:"normal", secLabel: getFormat("section", "Preset to Cycle"), cap: "device.VirtualContainer", mul: true],         
          
-         [id:'fanSet_', sOrder:18, desc:'Set Fan to ', comm:setFan, sub:"valSpeed", subType:"enum", subOpt:['off','low','medium-low','medium','high','auto'], type:"hasSub", secLabel: getFormat("section", "Set Speed"), cap: "capability.fanControl", sTitle: "Set Speed to", sDesc:"L/ML/M/H/A", mul: true],
-         [id:"fanCycle_", sOrder:19, desc:'Cycle Fan Speed', comm:cycleFan, type:"normal", secLabel: getFormat("section", "Cycle Speed"), cap: "capability.fanControl", mul: true],         
-         [id:"fanAdjust_", sOrder:20,desc:'Adjust', comm:adjustFan, type:"normal", secLabel: getFormat("section", "Cycle Speed (Legacy)"), cap: "capability.switchLevel", mul: true],
+         [id:'fanSet_', sOrder:19, desc:'Set Fan to ', comm:setFan, sub:"valSpeed", subType:"enum", subOpt:['off','low','medium-low','medium','high','auto'], type:"hasSub", secLabel: getFormat("section", "Set Speed"), cap: "capability.fanControl", sTitle: "Set Speed to", sDesc:"L/ML/M/H/A", mul: true],
+         [id:"fanCycle_", sOrder:20, desc:'Cycle Fan Speed', comm:cycleFan, type:"normal", secLabel: getFormat("section", "Cycle Speed"), cap: "capability.fanControl", mul: true],         
+         [id:"fanAdjust_", sOrder:21,desc:'Adjust', comm:adjustFan, type:"normal", secLabel: getFormat("section", "Cycle Speed (Legacy)"), cap: "capability.switchLevel", mul: true],
          
-         [id:"mode_", sOrder:21, desc:'Set Mode', comm:changeMode, type:"normal", secLabel: getFormat("section", "Set Mode"), cap: "mode", mul: false],
-     	 [id:"hsm_", sOrder:22, desc:'Set HSM', comm:setHSM, type:"normal", secLabel: getFormat("section", "Set HSM"), cap: "enum", opt:['armAway','armHome','disarm','armRules','disarmRules','disarmAll','armAll','cancelAlerts'], mul: false],
+         [id:"mode_", sOrder:22, desc:'Set Mode', comm:changeMode, type:"normal", secLabel: getFormat("section", "Set Mode"), cap: "mode", mul: false],
+     	 [id:"hsm_", sOrder:23, desc:'Set HSM', comm:setHSM, type:"normal", secLabel: getFormat("section", "Set HSM"), cap: "enum", opt:['armAway','armHome','disarm','armRules','disarmRules','disarmAll','armAll','cancelAlerts'], mul: false],
 
-         [id:'rule_', sOrder:23, desc:'Rule To ', comm:ruleExec, sub:"valRule", subType:"enum", subOpt:['Run','Stop','Pause','Resume','Evaluate','Set Boolean True','Set Boolean False'], type:"hasSub", secLabel: getFormat("section", "Rule and Actions"), cap: "enum", opt: getRules(), sTitle: "Select Action Type", sDesc:"Choose Action", mul: true],
+         [id:'rule_', sOrder:24, desc:'Rule To ', comm:ruleExec, sub:"valRule", subType:"enum", subOpt:['Run','Stop','Pause','Resume','Evaluate','Set Boolean True','Set Boolean False'], type:"hasSub", secLabel: getFormat("section", "Rule and Actions"), cap: "enum", opt: getRules(), sTitle: "Select Action Type", sDesc:"Choose Action", mul: true],
 		 
-         [id:"locks_", sOrder:24, desc:'Lock', comm:setUnlock, type:"normal", secLabel: getFormat("section", "Locks (Lock Only)"), cap: "capability.lock", mul: true],
-		 [id:'cycleScenes_', sOrder:25, desc:'Cycle', comm:cycle, type:"normal", secLabel: getFormat("section", "Scenes (Cycle)"), cap: "device.SceneActivator", mul: true, isCycle: true],
-         [id:"shadeAdjust_", sOrder:26,desc:'Adjust', comm:adjustShade, type:"normal", secLabel: getFormat("section", "Shades (Up/Down/Stop)"), cap: "capability.doorControl", mul: true],
-         [id:'sirens_', sOrder:27, desc:'Toggle', comm:toggle, type:"normal", secLabel: getFormat("section", "Sirens (Toggle)"), cap: "capability.alarm", mul: true],
-         //[id:'httpRequest_', sOrder:28, desc:'Send Http Request', comm:hRequest, sub:"reqType", subType:"enum", subOpt:['POST', 'GET'], type:"hasSub", secLabel: getFormat("section", "Send Http Request"), cap: "text", sTitle:"Request Type", sDesc:"Request Type", mul: false],
-         [id:'httpRequest_', sOrder:28, desc:'Send: ', comm:hRequest, sub:"reqUrl", subType:"text", type:"hasSub", secLabel: getFormat("section", "Send Http Request"), cap: "enum", opt:['POST', 'GET'], sTitle:"HTTP URL", sDesc:"Enter complete url to send", mul: false],
-         [id:"speechDevice_", sOrder:29, desc:'Send Msg To', comm:speechHandle, type:"normal", secLabel: getFormat("section", "Notifications (Speech):"), sub:"speechTxt", cap: "capability.speechSynthesis", subType:"text", sTitle: "Message To Speak:", sDesc:"Enter message to speak (Random messages: Use ; to separate choices)", mul: true],///set type to normal instead of sub so message text is not displayed
+         [id:"locks_", sOrder:25, desc:'Lock', comm:setUnlock, type:"normal", secLabel: getFormat("section", "Locks (Lock Only)"), cap: "capability.lock", mul: true],
+		 [id:'cycleScenes_', sOrder:26, desc:'Cycle', comm:cycle, type:"normal", secLabel: getFormat("section", "Scenes (Cycle)"), cap: "device.SceneActivator", mul: true, isCycle: true],
+         [id:"shadeAdjust_", sOrder:27,desc:'Adjust', comm:adjustShade, type:"normal", secLabel: getFormat("section", "Shades (Up/Down/Stop)"), cap: "capability.doorControl", mul: true],
+         [id:'sirens_', sOrder:28, desc:'Toggle', comm:toggle, type:"normal", secLabel: getFormat("section", "Sirens (Toggle)"), cap: "capability.alarm", mul: true],
+         [id:'httpRequest_', sOrder:29, desc:'Send: ', comm:hRequest, sub:"reqUrl", subType:"text", type:"hasSub", secLabel: getFormat("section", "Send Http Request"), cap: "enum", opt:['POST', 'GET'], sTitle:"HTTP URL", sDesc:"Enter complete url to send", mul: false],
+         [id:"speechDevice_", sOrder:30, desc:'Send Msg To', comm:speechHandle, type:"normal", secLabel: getFormat("section", "Notifications (Speech):"), sub:"speechTxt", cap: "capability.speechSynthesis", subType:"text", sTitle: "Message To Speak:", sDesc:"Enter message to speak (Random messages: Use ; to separate choices)", mul: true],///set type to normal instead of sub so message text is not displayed
 		 
 		 [id:"notifications_", desc:'Send Push Notification', comm:messageHandle, sub:"valNotify", type:"bool"],
      	 [id:"phone_", desc:'Send SMS', comm:smsHandle, sub:"notifications_", type:"normal"],
@@ -552,6 +554,11 @@ def speakernexttrack(device) {
 	log.info "Next Track Sent to: $device"
 	device.nextTrack()
 }   
+
+def speakerprevioustrack(device) {
+	log.info "Previous Track Sent to: $device"
+	device.previousTrack()
+} 
 
 def speakermute(device) {
 	log.info "Toggling Mute/Unmute: $device"
