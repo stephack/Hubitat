@@ -5,7 +5,9 @@
  *
  *	ABC Child Creator for Advanced Button Controller
  *
- *	Author: SmartThings, modified by Bruce Ravenel, Dale Coffing, Stephan Hackett
+ *	Author: SmartThings, modified by Bruce Ravenel, Dale Coffing, Stephan Hackett, Wayne Williams
+ *
+ *  12/21/19 - WDW - Add support for CocoHue scene rotation.
  *
  *  11/05/19 - Added previousTrack support for speakers
  *
@@ -416,10 +418,11 @@ def getPrefDetails(){
 		 
          [id:"locks_", sOrder:25, desc:'Lock', comm:setUnlock, type:"normal", secLabel: getFormat("section", "Locks (Lock Only)"), cap: "capability.lock", mul: true],
 		 [id:'cycleScenes_', sOrder:26, desc:'Cycle', comm:cycle, type:"normal", secLabel: getFormat("section", "Scenes (Cycle)"), cap: "device.SceneActivator", mul: true, isCycle: true],
-         [id:"shadeAdjust_", sOrder:27,desc:'Adjust', comm:adjustShade, type:"normal", secLabel: getFormat("section", "Shades (Up/Down/Stop)"), cap: "capability.doorControl", mul: true],
-         [id:'sirens_', sOrder:28, desc:'Toggle', comm:toggle, type:"normal", secLabel: getFormat("section", "Sirens (Toggle)"), cap: "capability.alarm", mul: true],
-         [id:'httpRequest_', sOrder:29, desc:'Send: ', comm:hRequest, sub:"reqUrl", subType:"text", type:"hasSub", secLabel: getFormat("section", "Send Http Request"), cap: "enum", opt:['POST', 'GET'], sTitle:"HTTP URL", sDesc:"Enter complete url to send", mul: false],
-         [id:"speechDevice_", sOrder:30, desc:'Send Msg To', comm:speechHandle, type:"normal", secLabel: getFormat("section", "Notifications (Speech):"), sub:"speechTxt", cap: "capability.speechSynthesis", subType:"text", sTitle: "Message To Speak:", sDesc:"Enter message to speak (Random messages: Use ; to separate choices)", mul: true],///set type to normal instead of sub so message text is not displayed
+         [id:'cycleCoCoScenes_', sOrder:27, desc:'Cycle', comm:cycle, type:"normal", secLabel: getFormat("section", "CoCoScenes (Cycle)"), cap: "device.CoCoHueScene", mul: true, isCycle: true],
+         [id:"shadeAdjust_", sOrder:28,desc:'Adjust', comm:adjustShade, type:"normal", secLabel: getFormat("section", "Shades (Up/Down/Stop)"), cap: "capability.doorControl", mul: true],
+         [id:'sirens_', sOrder:29, desc:'Toggle', comm:toggle, type:"normal", secLabel: getFormat("section", "Sirens (Toggle)"), cap: "capability.alarm", mul: true],
+         [id:'httpRequest_', sOrder:30, desc:'Send: ', comm:hRequest, sub:"reqUrl", subType:"text", type:"hasSub", secLabel: getFormat("section", "Send Http Request"), cap: "enum", opt:['POST', 'GET'], sTitle:"HTTP URL", sDesc:"Enter complete url to send", mul: false],
+         [id:"speechDevice_", sOrder:31, desc:'Send Msg To', comm:speechHandle, type:"normal", secLabel: getFormat("section", "Notifications (Speech):"), sub:"speechTxt", cap: "capability.speechSynthesis", subType:"text", sTitle: "Message To Speak:", sDesc:"Enter message to speak (Random messages: Use ; to separate choices)", mul: true],///set type to normal instead of sub so message text is not displayed
 		 
 		 [id:"notifications_", desc:'Send Push Notification', comm:messageHandle, sub:"valNotify", type:"bool"],
      	 [id:"phone_", desc:'Send SMS', comm:smsHandle, sub:"notifications_", type:"normal"],
