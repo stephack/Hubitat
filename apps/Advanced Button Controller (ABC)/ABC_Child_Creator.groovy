@@ -7,6 +7,8 @@
  *
  *	Author: SmartThings, modified by Bruce Ravenel, Dale Coffing, Stephan Hackett
  *
+ *  02/26/20 - Forced initialization on hub restart to avoid delays on "first activation". Thank you @ogiewon for the suggestion.
+ *
  *  11/05/19 - Added previousTrack support for speakers
  *
  *  10/06/19 - Added Auto as option under Set Fan Speed
@@ -95,7 +97,7 @@
 
 import hubitat.helper.RMUtils
 
-def version(){"v0.2.191105"}
+def version(){"v0.2.200226"}
 
 definition(
     name: "ABC Button Mapping",
@@ -369,6 +371,7 @@ def initialize() {
     if(logEnable) log.debug "INITIALIZED with settings: ${settings}"
     if(logEnable) log.debug app.label
     if(!app.label || app.label == "default")app.updateLabel(defaultLabel())
+    subscribe(location, "systemStart", hubRestartHandler)
 	subscribe(buttonDevice, "pushed", buttonEvent)
 	subscribe(buttonDevice, "held", buttonEvent)
 	subscribe(buttonDevice, "doubleTapped", buttonEvent)
@@ -447,6 +450,10 @@ def checkForUpdate(){
         catch (e) {
         	log.error "Error:  $e"
     	}
+}
+
+def hubRestartHandler(evt) {
+    if(logEnable) log.debug "ABC [$app.label]Initialized: Hub Restart"
 }
 
 def buttonEvent(evt) {
@@ -658,7 +665,7 @@ def changeMode(mode) {
 	if (location.mode != mode && location.modes?.find { it.name == mode}) setLocationMode(mode)
 }
 
-def cycleFan(devices) { //all fans will sync speeds with fisrt fan in the list
+def cycleFan(devices) { //all fans will sync speeds with first fan in the list
     log.info "Cycling: $devices"
     def mySpeed = devices[0].currentSpeed
     if(mySpeed == "off") devices.setSpeed("low") 
