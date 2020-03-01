@@ -7,6 +7,9 @@
  *
  *	Author: SmartThings, modified by Bruce Ravenel, Dale Coffing, Stephan Hackett
  *
+ *  03/01/20 - added ability to control windowShade devices under "Shades" menu option)
+ *           - original shade control (doorControl) moved to "Garage Doors/Legacy Shades" menu option
+ *
  *  02/26/20 - Forced initialization on hub restart to avoid delays on "first activation". Thank you @ogiewon for the suggestion.
  *
  *  11/05/19 - Added previousTrack support for speakers
@@ -97,7 +100,7 @@
 
 import hubitat.helper.RMUtils
 
-def version(){"v0.2.200226"}
+def version(){"v0.2.200301"}
 
 definition(
     name: "ABC Button Mapping",
@@ -177,29 +180,29 @@ def getButtonSections(buttonNumber) {
         def myDetail
         section(getFormat("header", "${getImage("Switches", "45")}"+" SWITCHES")){}
 		//state.details=getPrefDetails()
-        for(i in 1..30) {//Build 1st 30 Button Config Options
+        for(i in 1..31) {//Build 1st 30 Button Config Options
         	myDetail = state.details.find{it.sOrder==i}
         	//
     section(title: myDetail.secLabel, hideable: true, hidden: !(shallHide("${myDetail.id}${buttonNumber}"))) {
 				if(showPush(myDetail.desc)) input "${myDetail.id}${buttonNumber}_pushed", myDetail.cap, title: "When Pushed", multiple: myDetail.mul, required: false, submitOnChange: collapseAll, options: myDetail.opt
 				if(myDetail.sub && isReq("${myDetail.id}${buttonNumber}_pushed")) input "${myDetail.sub}${buttonNumber}_pushed", myDetail.subType, title: myDetail.sTitle, multiple: false, required: !myDetail.sNotReq, description: myDetail.sDesc, options: myDetail.subOpt
-                if(myDetail.sub2 && isReq("${myDetail.id}${buttonNumber}_pushed")) input "${myDetail.sub2}${buttonNumber}_pushed", myDetail.subType, title: myDetail.s2Title, multiple: false, required: !myDetail.s2NotReq, description: myDetail.s2Desc, options: myDetail.subOpt
-                if(myDetail.sub3 && isReq("${myDetail.id}${buttonNumber}_pushed")) input "${myDetail.sub3}${buttonNumber}_pushed", myDetail.subType, title: myDetail.s3Title, multiple: false, required: !myDetail.s3NotReq, description: myDetail.s3Desc, options: myDetail.subOpt
+                if(myDetail.sub2 && isReq("${myDetail.id}${buttonNumber}_pushed")) input "${myDetail.sub2}${buttonNumber}_pushed", myDetail.sub2Type, title: myDetail.s2Title, multiple: false, required: !myDetail.s2NotReq, description: myDetail.s2Desc, options: myDetail.sub2Opt
+                if(myDetail.sub3 && isReq("${myDetail.id}${buttonNumber}_pushed")) input "${myDetail.sub3}${buttonNumber}_pushed", myDetail.sub3Type, title: myDetail.s3Title, multiple: false, required: !myDetail.s3NotReq, description: myDetail.s3Desc, options: myDetail.sub3Opt
 				
         		if(showHeld(myDetail.desc)) input "${myDetail.id}${buttonNumber}_held", myDetail.cap, title: "When Held", multiple: myDetail.mul, required: false, submitOnChange: collapseAll, options: myDetail.opt
                 if(myDetail.sub && isReq("${myDetail.id}${buttonNumber}_held")) input "${myDetail.sub}${buttonNumber}_held", myDetail.subType, title: myDetail.sTitle, multiple: false, required: !myDetail.sNotReq, description: myDetail.sDesc, options: myDetail.subOpt
-                if(myDetail.sub2 && isReq("${myDetail.id}${buttonNumber}_held")) input "${myDetail.sub2}${buttonNumber}_held", myDetail.subType, title: myDetail.s2Title, multiple: false, required: !myDetail.s2NotReq, description: myDetail.s2Desc, options: myDetail.subOpt
-                if(myDetail.sub3 && isReq("${myDetail.id}${buttonNumber}_held")) input "${myDetail.sub3}${buttonNumber}_held", myDetail.subType, title: myDetail.s3Title, multiple: false, required: !myDetail.s3NotReq, description: myDetail.s3Desc, options: myDetail.subOpt
+                if(myDetail.sub2 && isReq("${myDetail.id}${buttonNumber}_held")) input "${myDetail.sub2}${buttonNumber}_held", myDetail.sub2Type, title: myDetail.s2Title, multiple: false, required: !myDetail.s2NotReq, description: myDetail.s2Desc, options: myDetail.sub2Opt
+                if(myDetail.sub3 && isReq("${myDetail.id}${buttonNumber}_held")) input "${myDetail.sub3}${buttonNumber}_held", myDetail.sub3Type, title: myDetail.s3Title, multiple: false, required: !myDetail.s3NotReq, description: myDetail.s3Desc, options: myDetail.sub3Opt
         		
 				if(showDouble(myDetail.desc)) input "${myDetail.id}${buttonNumber}_doubleTapped", myDetail.cap, title: "When Double Tapped", multiple: myDetail.mul, required: false, submitOnChange: collapseAll, options: myDetail.opt
                 if(myDetail.sub && isReq("${myDetail.id}${buttonNumber}_doubleTapped")) input "${myDetail.sub}${buttonNumber}_doubleTapped", myDetail.subType, title: myDetail.sTitle, multiple: false, required: !myDetail.sNotReq, description: myDetail.sDesc, options: myDetail.subOpt
-                if(myDetail.sub2 && isReq("${myDetail.id}${buttonNumber}_doubleTapped")) input "${myDetail.sub2}${buttonNumber}_doubleTapped", myDetail.subType, title: myDetail.s2Title, multiple: false, required: !myDetail.s2NotReq, description: myDetail.s2Desc, options: myDetail.subOpt
-                if(myDetail.sub3 && isReq("${myDetail.id}${buttonNumber}_doubleTapped")) input "${myDetail.sub3}${buttonNumber}_doubleTapped", myDetail.subType, title: myDetail.s3Title, multiple: false, required: !myDetail.s3NotReq, description: myDetail.s3Desc, options: myDetail.subOpt
+                if(myDetail.sub2 && isReq("${myDetail.id}${buttonNumber}_doubleTapped")) input "${myDetail.sub2}${buttonNumber}_doubleTapped", myDetail.sub2Type, title: myDetail.s2Title, multiple: false, required: !myDetail.s2NotReq, description: myDetail.s2Desc, options: myDetail.sub2Opt
+                if(myDetail.sub3 && isReq("${myDetail.id}${buttonNumber}_doubleTapped")) input "${myDetail.sub3}${buttonNumber}_doubleTapped", myDetail.sub3Type, title: myDetail.s3Title, multiple: false, required: !myDetail.s3NotReq, description: myDetail.s3Desc, options: myDetail.sub3Opt
 		
         		if(showRelease(myDetail.desc)) input "${myDetail.id}${buttonNumber}_released", myDetail.cap, title: "When Released", multiple: myDetail.mul, required: false, submitOnChange: collapseAll, options: myDetail.opt
                 if(myDetail.sub && isReq("${myDetail.id}${buttonNumber}_released")) input "${myDetail.sub}${buttonNumber}_released", myDetail.subType, title: myDetail.sTitle, multiple: false, required: !myDetail.sNotReq, description: myDetail.sDesc, options: myDetail.subOpt
-                if(myDetail.sub2 && isReq("${myDetail.id}${buttonNumber}_released")) input "${myDetail.sub2}${buttonNumber}_released", myDetail.subType, title: myDetail.s2Title, multiple: false, required: !myDetail.s2NotReq, description: myDetail.s2Desc, options: myDetail.subOpt
-                if(myDetail.sub3 && isReq("${myDetail.id}${buttonNumber}_released")) input "${myDetail.sub3}${buttonNumber}_released", myDetail.subType, title: myDetail.s3Title, multiple: false, required: !myDetail.s3NotReq, description: myDetail.s3Desc, options: myDetail.subOpt
+                if(myDetail.sub2 && isReq("${myDetail.id}${buttonNumber}_released")) input "${myDetail.sub2}${buttonNumber}_released", myDetail.sub2Type, title: myDetail.s2Title, multiple: false, required: !myDetail.s2NotReq, description: myDetail.s2Desc, options: myDetail.sub2Opt
+                if(myDetail.sub3 && isReq("${myDetail.id}${buttonNumber}_released")) input "${myDetail.sub3}${buttonNumber}_released", myDetail.sub3Type, title: myDetail.s3Title, multiple: false, required: !myDetail.s3NotReq, description: myDetail.s3Desc, options: myDetail.sub3Opt
 		}
             if(i==3) section("\n"+getFormat("header", "${getImage("Dimmers", "45")}"+" DIMMERS")){}
             if(i==9) section("\n"+getFormat("header", "${getImage("Color", "45")}"+" COLOR LIGHTS")){}
@@ -326,8 +329,12 @@ def getDescDetails(bNum, type){
 			def prefSubValue = thisSub != null? thisSub:"(!Missing!)"
             def sub2Value = settings[prefDetail.sub2 + numType]
             def sub3Value = settings[prefDetail.sub3 + numType]
-            if(sub2Value) prefSubValue += ", S: ${sub2Value}"
-            if(sub3Value) prefSubValue += ", L: ${sub3Value}"
+            def sub2Initial = prefDetail.s2Initial
+            def sub3Initial = prefDetail.s3Initial
+            if(sub2Initial) prefSubValue += "${sub2Initial}"
+            if(sub2Value) prefSubValue += "${sub2Value}"
+            if(sub3Initial) prefSubValue += "${sub3Initial}"
+            if(sub3Value) prefSubValue += "${sub3Value}"
             if(prefDetail.type=="normal") formattedPage += "\n- ${prefDetail.desc}${prefDevice}"
             if(prefDetail.type=="hasSub") formattedPage += "\n- ${prefDetail.desc}${prefSubValue}${prefDevice}"
             if(prefDetail.type=="bool") formattedPage += "\n- ${prefDetail.desc}"
@@ -398,7 +405,7 @@ def getPrefDetails(){
          [id:'lightsRamp_', sOrder:9, desc:'Ramp ', comm:rampUp, sub:"valDir", subType:"enum", subOpt:['up','down'], type:"hasSub", secLabel: getFormat("section", "Ramp Up/Down"), cap: "capability.changeLevel", sTitle: "Ramp Direction (Up/Down)", sDesc:"Up or Down", mul: true],
          
          [id:'lightColorTemp_', sOrder:10, desc:'Set Light Color Temp to ', comm:colorSetT, sub:"valColorTemp", subType:"number", type:"hasSub", secLabel: getFormat("section", "Set Temperature"), cap: "capability.colorTemperature", sTitle: "Color Temp", sDesc:"2000 to 9000", mul: true],
-         [id:'lightColor_', sOrder:11, desc:'Set Light Color H:', comm:colorSet, sub:"valHue", subType:"number", sub2:"valSat", sub3:"valLvl", type:"hasSub", secLabel: getFormat("section", "Set Color"), cap: "capability.colorControl", sTitle: "Hue", s2Title: "Saturation", s3Title: "Lvl", sDesc:"0 to 100", s2Desc:"0 to 100", s3Desc:"0 to 100", mul: true, s3NotReq:true],
+         [id:'lightColor_', sOrder:11, desc:'Set Light Color H:', comm:colorSet, sub:"valHue", sub2:"valSat", sub3:"valLvl", type:"hasSub", subType:"number", sub2Type:"number", sub3Type:"number", secLabel: getFormat("section", "Set Color"), cap: "capability.colorControl", sTitle: "Hue", s2Title: "Saturation", s3Title: "Lvl", sDesc:"0 to 100", s2Desc:"0 to 100", s3Desc:"0 to 100", s2Initial: ", S:", s3Initial: ", L:", mul: true, s3NotReq:true],
      	          
          [id:"speakerpp_", sOrder:12, desc:'Toggle Play/Pause', comm:speakerplaystate, type:"normal", secLabel: getFormat("section", "Toggle Play/Pause"), cap: "capability.musicPlayer", mul: true],
      	 [id:'speakervu_', sOrder:13, desc:'Volume +', comm:levelUp, sub:"valSpeakU", subType:"number", type:"hasSub", secLabel: getFormat("section", "Increase Volume By"), cap: "capability.musicPlayer", sTitle: "Increase by", sDesc:"0 to 15", mul: true],
@@ -419,10 +426,12 @@ def getPrefDetails(){
 		 
          [id:"locks_", sOrder:25, desc:'Lock', comm:setUnlock, type:"normal", secLabel: getFormat("section", "Locks (Lock Only)"), cap: "capability.lock", mul: true],
 		 [id:'cycleScenes_', sOrder:26, desc:'Cycle', comm:cycle, type:"normal", secLabel: getFormat("section", "Scenes (Cycle)"), cap: "device.SceneActivator", mul: true, isCycle: true],
-         [id:"shadeAdjust_", sOrder:27,desc:'Adjust', comm:adjustShade, type:"normal", secLabel: getFormat("section", "Shades (Up/Down/Stop)"), cap: "capability.doorControl", mul: true],
-         [id:'sirens_', sOrder:28, desc:'Toggle', comm:toggle, type:"normal", secLabel: getFormat("section", "Sirens (Toggle)"), cap: "capability.alarm", mul: true],
-         [id:'httpRequest_', sOrder:29, desc:'Send: ', comm:hRequest, sub:"reqUrl", subType:"text", type:"hasSub", secLabel: getFormat("section", "Send Http Request"), cap: "enum", opt:['POST', 'GET'], sTitle:"HTTP URL", sDesc:"Enter complete url to send", mul: false],
-         [id:"speechDevice_", sOrder:30, desc:'Send Msg To', comm:speechHandle, type:"normal", secLabel: getFormat("section", "Notifications (Speech):"), sub:"speechTxt", cap: "capability.speechSynthesis", subType:"text", sTitle: "Message To Speak:", sDesc:"Enter message to speak (Random messages: Use ; to separate choices)", mul: true],///set type to normal instead of sub so message text is not displayed
+         [id:"shadeAdjust_", sOrder:27,desc:'Adjust', comm:adjustShade, type:"normal", secLabel: getFormat("section", "Garage Doors/Legacy Shades (Up/Down/Stop)"), cap: "capability.doorControl", mul: true],
+         [id:'newShadeAdjust_', sOrder:28, desc:'Adjust: ', comm:adjustNewShade, sub:"valShadeAction", sub2:"valSposition", type:"hasSub", subType:"enum", sub2Type:"number", subOpt:['Open','Close', 'Set Position'], secLabel: getFormat("section", "Shades (Open/Close/Position)"), cap: "capability.windowShade", sTitle: "Action", s2Title:"Position", sDesc:"", s2Desc:"(0 to 100) *applies to Set Position Only", s2Initial: " ", mul: true, s2NotReq: true],
+         
+         [id:'sirens_', sOrder:29, desc:'Toggle', comm:toggle, type:"normal", secLabel: getFormat("section", "Sirens (Toggle)"), cap: "capability.alarm", mul: true],
+         [id:'httpRequest_', sOrder:30, desc:'Send: ', comm:hRequest, sub:"reqUrl", subType:"text", type:"hasSub", secLabel: getFormat("section", "Send Http Request"), cap: "enum", opt:['POST', 'GET'], sTitle:"HTTP URL", sDesc:"Enter complete url to send", mul: false],
+         [id:"speechDevice_", sOrder:31, desc:'Send Msg To', comm:speechHandle, type:"normal", secLabel: getFormat("section", "Notifications (Speech):"), sub:"speechTxt", cap: "capability.speechSynthesis", subType:"text", sTitle: "Message To Speak:", sDesc:"Enter message to speak (Random messages: Use ; to separate choices)", mul: true],///set type to normal instead of sub so message text is not displayed
 		 
 		 [id:"notifications_", desc:'Send Push Notification', comm:messageHandle, sub:"valNotify", type:"bool"],
      	 [id:"phone_", desc:'Send SMS', comm:smsHandle, sub:"notifications_", type:"normal"],
@@ -545,6 +554,13 @@ def adjustShade(device) {
     	state.lastshadesUp ? device.down() : device.up()
         state.lastshadesUp = !state.lastshadesUp
     }
+}
+
+def adjustNewShade(devices, action, position){
+    log.info "Sending ${action} to: $devices"
+    if(action=='Open'){devices.open()}
+    if(action=='Close'){devices.close()}
+    if(action=='Set Position'){devices.setPosition(position)}
 }
 
 def setFan(devices, speed){
