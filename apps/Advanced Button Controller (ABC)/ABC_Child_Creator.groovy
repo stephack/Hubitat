@@ -7,6 +7,8 @@
  *
  *	Author: SmartThings, modified by Bruce Ravenel, Dale Coffing, Stephan Hackett
  *
+ *  06/17/21 - added support for stopPositionChange() and startPositionChange(direction) to comply with windowShade capability
+ *
  *  10/02/20 - split Ramp section in 2. Original is now called Ramp(Auto Stop on Release) and there is also a new option called Ramp (Manual Stop)
  *           - added the ability to unlock locks since this was added as an option in built-in apps.
  *
@@ -103,7 +105,7 @@
 
 import hubitat.helper.RMUtils
 
-def version(){"v0.2.201002"}
+def version(){"v0.2.210617"}
 
 definition(
     name: "ABC Button Mapping",
@@ -431,7 +433,7 @@ def getPrefDetails(){
          [id:"locks_", sOrder:26, desc:'Set Lock: ', comm:setUnlock, sub:"valLock", subType:"enum", subOpt:['lock','unlock'], type:"hasSub", secLabel: getFormat("section", "Locks"), cap: "capability.lock", sTitle: "Select Action Type", sDesc:"Choose Action", mul: true],
 		 [id:'cycleScenes_', sOrder:27, desc:'Cycle', comm:cycle, type:"normal", secLabel: getFormat("section", "Scenes (Cycle)"), cap: "device.SceneActivator", mul: true, isCycle: true],
          [id:"shadeAdjust_", sOrder:28,desc:'Adjust', comm:adjustShade, type:"normal", secLabel: getFormat("section", "Garage Doors/Legacy Shades (Up/Down/Stop)"), cap: "capability.doorControl", mul: true],
-         [id:'newShadeAdjust_', sOrder:29, desc:'Adjust: ', comm:adjustNewShade, sub:"valShadeAction", sub2:"valSposition", type:"hasSub", subType:"enum", sub2Type:"number", subOpt:['Open','Close', 'Set Position'], secLabel: getFormat("section", "Shades (Open/Close/Position)"), cap: "capability.windowShade", sTitle: "Action", s2Title:"Position", sDesc:"", s2Desc:"(0 to 100) *applies to Set Position Only", s2Initial: " ", mul: true, s2NotReq: true],
+         [id:'newShadeAdjust_', sOrder:29, desc:'Adjust: ', comm:adjustNewShade, sub:"valShadeAction", sub2:"valSposition", sub3:"valSDirection", type:"hasSub", subType:"enum", sub2Type:"number", sub3Type:"enum", subOpt:['Open','Close', 'Set Position','Start Position Change','Stop Position Change'], sub3Opt:['Open','Close'], secLabel: getFormat("section", "Shades (Open/Close/Position/Start/Stop)"), cap: "capability.windowShade", sTitle: "Action", s2Title:"Position", s3Title:"Direction", sDesc:"", s2Desc:"(0 to 100) *applies to Set Position Only", s3Desc:"*applies to Start Position Change Only", s2Initial: ", Pos:", s3Initial: ", Dir:", mul: true, s2NotReq: true, s3NotReq: true],
          
          [id:'sirens_', sOrder:30, desc:'Toggle', comm:toggle, type:"normal", secLabel: getFormat("section", "Sirens (Toggle)"), cap: "capability.alarm", mul: true],
          [id:'httpRequest_', sOrder:31, desc:'Send: ', comm:hRequest, sub:"reqUrl", subType:"text", type:"hasSub", secLabel: getFormat("section", "Send Http Request"), cap: "enum", opt:['POST', 'GET'], sTitle:"HTTP URL", sDesc:"Enter complete url to send", mul: false],
@@ -560,11 +562,13 @@ def adjustShade(device) {
     }
 }
 
-def adjustNewShade(devices, action, position){
+def adjustNewShade(devices, action, position, direction){
     log.info "Sending ${action} to: $devices"
     if(action=='Open'){devices.open()}
     if(action=='Close'){devices.close()}
     if(action=='Set Position'){devices.setPosition(position)}
+    if(action=='Start Position Change'){devices.startPositionChange(direction)}
+    if(action=='Stop Position Change'){devices.stopPositionChange()}
 }
 
 def setFan(devices, speed){
