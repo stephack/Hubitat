@@ -7,6 +7,8 @@
  *
  *	Author: SmartThings, modified by Bruce Ravenel, Dale Coffing, Stephan Hackett
  *
+ *  08/12/21 - added optional input to disable log.info statements to reduce Hubitat Log traffic (Dan Ogorchock)
+ *
  *  06/17/21 - added support for stopPositionChange() and startPositionChange(direction) to comply with windowShade capability
  *
  *  10/02/20 - split Ramp section in 2. Original is now called Ramp(Auto Stop on Release) and there is also a new option called Ramp (Manual Stop)
@@ -105,7 +107,7 @@
 
 import hubitat.helper.RMUtils
 
-def version(){"v0.2.210617"}
+def version(){"v0.2.210812"}
 
 definition(
     name: "ABC Button Mapping",
@@ -164,6 +166,7 @@ def chooseButton() {
             	input "manualCount", "number", title: "Set/Override # of Buttons?", required: false, description: "Only set if your driver does not report", submitOnChange: true
                 input "collapseAll", "bool", title: "Collapse Unconfigured Sections?", defaultValue: true
 				input "logEnable", "bool", title: "Enable Debug Logging?", required: false
+				input "descTextDisable", "bool", title: "Disable Descriptive Text Logging?", required: false
 			}
         section(title: "Only Execute When:", hideable: true, hidden: hideOptionsSection()) {
 			def timeLabel = timeIntervalLabel()
@@ -501,7 +504,7 @@ def buttonEvent(evt) {
 }
 
 def speechHandle(devices, msg){
-    log.info "Sending ${msg} to ${devices}"
+    if (!descTextDisable) log.info "Sending ${msg} to ${devices}"
 	if(msg.contains(";")) {
 		def myPool = msg.split(";")
 		def poolSize = myPool.size()
@@ -514,22 +517,22 @@ def speechHandle(devices, msg){
 }
 
 def turnOn(devices) {
-	log.info "Turning On: $devices"
+	if (!descTextDisable) log.info "Turning On: $devices"
 	devices.on()
 }
 
 def turnOff(devices) {
-	log.info "Turning Off: $devices"
+	if (!descTextDisable) log.info "Turning Off: $devices"
 	devices.off()
 }
 
 def turnDim(devices, level) {
-	log.info "Dimming (to $level): $devices"
+	if (!descTextDisable) log.info "Dimming (to $level): $devices"
 	devices.setLevel(level)
 }
 
 def colorSet(devices,hueVal,satVal,lvlVal) {
-    log.info "Setting Color (to H:$hueVal, S:$satVal, L:$lvlVal): $devices"
+    if (!descTextDisable) log.info "Setting Color (to H:$hueVal, S:$satVal, L:$lvlVal): $devices"
     def myColor = [:]
     myColor.hue = hueVal.toInteger()
     myColor.saturation = satVal.toInteger()
@@ -538,12 +541,12 @@ def colorSet(devices,hueVal,satVal,lvlVal) {
 }
 
 def colorSetT(devices, temp) {
-    log.info "Setting Color Temp (to $temp): $devices"
+    if (!descTextDisable) log.info "Setting Color Temp (to $temp): $devices"
     devices.setColorTemperature(temp)    
 }
 
 def adjustFan(device) {
-	log.info "Adjusting: $device"
+	if (!descTextDisable) log.info "Adjusting: $device"
 	def currentLevel = device.currentLevel[0]
 	if(device.currentSwitch[0] == 'off') device.setLevel(15)
 	else if (currentLevel < 34) device.setLevel(50)
@@ -552,7 +555,7 @@ def adjustFan(device) {
 }
 
 def adjustShade(device) {
-	log.info "Shades: $device = ${device.currentMotor} state.lastUP = $state.lastshadesUp"
+	if (!descTextDisable) log.info "Shades: $device = ${device.currentMotor} state.lastUP = $state.lastshadesUp"
 	if(device.currentMotor in ["up","down"]) {
     	state.lastshadesUp = device.currentMotor == "up"
     	device.stop()
@@ -563,7 +566,7 @@ def adjustShade(device) {
 }
 
 def adjustNewShade(devices, action, position, direction){
-    log.info "Sending ${action} to: $devices"
+    if (!descTextDisable) log.info "Sending ${action} to: $devices"
     if(action=='Open'){devices.open()}
     if(action=='Close'){devices.close()}
     if(action=='Set Position'){devices.setPosition(position)}
@@ -572,32 +575,32 @@ def adjustNewShade(devices, action, position, direction){
 }
 
 def setFan(devices, speed){
-	log.info "Setting Speed to $speed: $devices"
+	if (!descTextDisable) log.info "Setting Speed to $speed: $devices"
     devices.setSpeed(speed)
 }
 
 def speakerplaystate(device) {
-	log.info "Toggling Play/Pause: $device"
+	if (!descTextDisable) log.info "Toggling Play/Pause: $device"
 	device.currentStatus.contains('playing')? device.pause() : device.play()
 }
    
 def speakernexttrack(device) {
-	log.info "Next Track Sent to: $device"
+	if (!descTextDisable) log.info "Next Track Sent to: $device"
 	device.nextTrack()
 }   
 
 def speakerprevioustrack(device) {
-	log.info "Previous Track Sent to: $device"
+	if (!descTextDisable) log.info "Previous Track Sent to: $device"
 	device.previousTrack()
 } 
 
 def speakermute(device) {
-	log.info "Toggling Mute/Unmute: $device"
+	if (!descTextDisable) log.info "Toggling Mute/Unmute: $device"
 	device.currentMute.contains('unmuted')? device.mute() : device.unmute()
 } 
 
 def levelUp(device, inclevel) {
-	log.info "Incrementing Level (by +$inclevel): $device"
+	if (!descTextDisable) log.info "Incrementing Level (by +$inclevel): $device"
 	def currentVol = device.currentLevel[0]//device.currentValue('level')[0]	//currentlevel return a list...[0] is first item in list ie volume level
     def newVol = currentVol + inclevel
   	device.setLevel(newVol)
@@ -605,7 +608,7 @@ def levelUp(device, inclevel) {
 }
 
 def levelDown(device, declevel) {
-	log.info "Decrementing Level (by -$declevel): $device"
+	if (!descTextDisable) log.info "Decrementing Level (by -$declevel): $device"
 	def currentVol = device.currentLevel[0]//device.currentValue('level')[0]
     def newVol = currentVol - declevel
   	device.setLevel(newVol)
@@ -613,39 +616,39 @@ def levelDown(device, declevel) {
 }
 
 def rampUp(devices, dir){
-    log.info "Ramping ${dir}: $devices"
+    if (!descTextDisable) log.info "Ramping ${dir}: $devices"
     devices.startLevelChange(dir)
 }
 
 def rampEnd(device){
-	log.info "Ending Ramp: $device"
+	if (!descTextDisable) log.info "Ending Ramp: $device"
     device.stopLevelChange()    
 }
 
 def rampMan(devices, rCommand){
     if(rCommand=='stop'){
-        log.info "Ending Ramp: $devices"
+        if (!descTextDisable) log.info "Ending Ramp: $devices"
         devices.stopLevelChange() 
     }
     else{
-        log.info "Ramping ${rCommand}: $devices"
+        if (!descTextDisable) log.info "Ramping ${rCommand}: $devices"
         devices.startLevelChange(rCommand)
     }
 }
 
 def setUnlock(devices,action) {
     if(action=='unlock'){
-       	log.info "Unlocking: $devices"
+       	if (!descTextDisable) log.info "Unlocking: $devices"
 	    devices.unlock() 
     }
     if(action=='lock'){
-       	log.info "Locking: $devices"
+       	if (!descTextDisable) log.info "Locking: $devices"
 	    devices.lock() 
     }
 }
 
 def toggle(devices) {
-	log.info "Toggling: $devices"
+	if (!descTextDisable) log.info "Toggling: $devices"
 	if (devices*.currentValue('switch').contains('on')) {
 		devices.off()
 	}
@@ -661,18 +664,18 @@ def toggle(devices) {
 }
 
 def dimToggle(devices, dimLevel) {
-	log.info "Toggling On/Off | Dimming (to $dimLevel): $devices"
+	if (!descTextDisable) log.info "Toggling On/Off | Dimming (to $dimLevel): $devices"
 	if (devices*.currentValue('switch').contains('on')) devices.off()
 	else devices.setLevel(dimLevel)
 }
 
 def runRout(rout){
-	log.info "Running: $rout"
+	if (!descTextDisable) log.info "Running: $rout"
 	location.helloHome.execute(rout)
 }
 
 def ruleExec(rules, action){
-	log.info "Performing ${action} Action on Rules: ${rules}"
+	if (!descTextDisable) log.info "Performing ${action} Action on Rules: ${rules}"
 	def ruleAction
 	if(action == "Run") ruleAction =  "runRuleAct"
 	if(action == "Stop") ruleAction =  "stopRuleAct"
@@ -687,13 +690,13 @@ def ruleExec(rules, action){
 
 def messageHandle(msg, inApp) {
 	if(inApp==true) {
-    	log.info "Push notification sent"
+    	if (!descTextDisable) log.info "Push notification sent"
     	sendPush(msg)
 	}
 }
 
 def smsHandle(phone, msg){
-    log.info "SMS sent"
+    if (!descTextDisable) log.info "SMS sent"
     sendSms(phone, msg ?:"No custom text entered on: $app.label")
 }
 
@@ -702,12 +705,12 @@ def setHSM(hsmMode) {
 }
 
 def changeMode(mode) {
-	log.info "Changing Mode to: $mode"
+	if (!descTextDisable) log.info "Changing Mode to: $mode"
 	if (location.mode != mode && location.modes?.find { it.name == mode}) setLocationMode(mode)
 }
 
 def cycleFan(devices) { //all fans will sync speeds with first fan in the list
-    log.info "Cycling: $devices"
+    if (!descTextDisable) log.info "Cycling: $devices"
     def mySpeed = devices[0].currentSpeed
     if(mySpeed == "off") devices.setSpeed("low") 
     if(mySpeed == "low") devices.setSpeed("medium-low") 
@@ -717,7 +720,7 @@ def cycleFan(devices) { //all fans will sync speeds with first fan in the list
 }
 
 def cycle(devices, devIndex) {
-    log.info "Cycling: $devices"
+    if (!descTextDisable) log.info "Cycling: $devices"
     def mySize = devices.size() -1
     if(!state."${devIndex}" || state."${devIndex}" > mySize) state."${devIndex}" = 0
     devices[state."${devIndex}"].push()
