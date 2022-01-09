@@ -7,6 +7,9 @@
  *
  *	Author: SmartThings, modified by Bruce Ravenel, Dale Coffing, Stephan Hackett
  *
+ *  01/09/22 - added support for RMv5 rules. Older versions are considered "legacy". Requires Hub v2.2.9 f/w or higher.
+ *           - Thanks to @bertabcd1234 for guidance with the undocumented RMUtils v5 api.
+ *
  *  09/03/21 - added new garageDoorControl capability with distinct open/close actions
  *           - original Garage Door section is now Legacy Garage Door
  *
@@ -110,7 +113,7 @@
 
 import hubitat.helper.RMUtils
 
-def version(){"v0.2.210903"}
+def version(){"v0.2.220109"}
 
 definition(
     name: "ABC Button Mapping",
@@ -191,7 +194,7 @@ def getButtonSections(buttonNumber) {
         def myDetail
         section(getFormat("header", "${getImage("Switches", "45")}"+" SWITCHES")){}
 		//state.details=getPrefDetails()
-        for(i in 1..33) {//Build 1st 30 Button Config Options
+        for(i in 1..34) {//Build 1st 34 Button Config Options
         	myDetail = state.details.find{it.sOrder==i}
         	//
     section(title: myDetail.secLabel, hideable: true, hidden: !(shallHide("${myDetail.id}${buttonNumber}"))) {
@@ -221,7 +224,7 @@ def getButtonSections(buttonNumber) {
             if(i==19) section("\n"+getFormat("header", "${getImage("Fans", "45")}"+" FANS")){}
             if(i==22) section("\n"+getFormat("header", "${getImage("Mode", "45")}"+" MODES")){}
 			if(i==24) section("\n"+getFormat("header", "${getImage("Rule", "45")}"+" RULE CONTROL")){}
-            if(i==25) section("\n"+getFormat("header", "${getImage("Other", "45")}"+" OTHER")){}
+            if(i==26) section("\n"+getFormat("header", "${getImage("Other", "45")}"+" OTHER")){}
         }
 		
 		section(getFormat("section", "Notifications (SMS):"), hideable:true , hidden: !shallHide("notifications_${buttonNumber}")) {
@@ -333,8 +336,11 @@ def getDescDetails(bNum, type){
 			if(prefDetail.sub == "valRule"){
 				prefDevice = " : " + getRuleName(eachPref.value)	//extracts rules name (instead if number) for button description
 			}
+			else if(prefDetail.sub == "valv5Rule"){
+				prefDevice = " : " + getRuleName5(eachPref.value)	//extracts rules name (instead if number) for button description
+			}
 			else {
-				prefDevice = " : ${eachPref.value}"// was only needed to cleanup display in ST..not necessary in HE->           - "[" - "]"	
+				prefDevice = " : ${eachPref.value}"
 			}
 			def thisSub = settings[prefDetail.sub + numType]
 			def prefSubValue = thisSub != null? thisSub:"(!Missing!)"
@@ -367,11 +373,33 @@ def getRules(){
 	return rules
 }
 
+def getRules5(){
+	rules = RMUtils.getRuleList('5.0')
+	//converts rules list to easily parsed format and stores in state.rules for easy access
+	state.rules5=[:] 
+	rules.each{rule->
+		rule.each{pair->
+			state.rules5[pair.key]=pair.value 
+		}
+	}
+	////////////////////////////////////////////////////
+	return rules
+}
+
 def getRuleName(num){	//allows button descriptions for RuleAPI controls to show Rule Name instead of Rule Number
 	getRules()
 	def holder=[]
 	num.each{ruleNum->
 		holder << state.rules.find{it.key==ruleNum.toInteger()}.value
+	}
+	return holder
+}
+
+def getRuleName5(num){	//allows button descriptions for RuleAPI controls to show Rule Name instead of Rule Number
+    getRules5()
+	def holder=[]
+	num.each{ruleNum->
+		holder << state.rules5.find{it.key==ruleNum.toInteger()}.value
 	}
 	return holder
 }
@@ -434,17 +462,18 @@ def getPrefDetails(){
          [id:"mode_", sOrder:23, desc:'Set Mode', comm:changeMode, type:"normal", secLabel: getFormat("section", "Set Mode"), cap: "mode", mul: false],
      	 [id:"hsm_", sOrder:24, desc:'Set HSM', comm:setHSM, type:"normal", secLabel: getFormat("section", "Set HSM"), cap: "enum", opt:['armAway','armHome','disarm','armRules','disarmRules','disarmAll','armAll','cancelAlerts'], mul: false],
 
-         [id:'rule_', sOrder:25, desc:'Rule To ', comm:ruleExec, sub:"valRule", subType:"enum", subOpt:['Run','Stop','Pause','Resume','Evaluate','Set Boolean True','Set Boolean False'], type:"hasSub", secLabel: getFormat("section", "Rule and Actions"), cap: "enum", opt: getRules(), sTitle: "Select Action Type", sDesc:"Choose Action", mul: true],
+         [id:'rule_', sOrder:25, desc:'Rule To ', comm:ruleExec, sub:"valRule", subType:"enum", subOpt:['Run','Stop','Pause','Resume','Evaluate','Set Boolean True','Set Boolean False'], type:"hasSub", secLabel: getFormat("section", "Legacy Rule and Actions"), cap: "enum", opt: getRules(), sTitle: "Select Action Type", sDesc:"Choose Action", mul: true],
+         [id:'rule5_', sOrder:26, desc:'Rule v5 To ', comm:ruleExec5, sub:"valv5Rule", subType:"enum", subOpt:['Run','Stop','Pause','Resume','Evaluate','Set Boolean True','Set Boolean False'], type:"hasSub", secLabel: getFormat("section", "Rule (v5) and Actions"), cap: "enum", opt: getRules5(), sTitle: "Select Action Type", sDesc:"Choose Action", mul: true],
 		 
-         [id:"locks_", sOrder:26, desc:'Set Lock: ', comm:setUnlock, sub:"valLock", subType:"enum", subOpt:['lock','unlock'], type:"hasSub", secLabel: getFormat("section", "Locks"), cap: "capability.lock", sTitle: "Select Action Type", sDesc:"Choose Action", mul: true],
-		 [id:'cycleScenes_', sOrder:27, desc:'Cycle', comm:cycle, type:"normal", secLabel: getFormat("section", "Scenes (Cycle)"), cap: "device.SceneActivator", mul: true, isCycle: true],
-         [id:"shadeAdjust_", sOrder:28,desc:'Adjust', comm:adjustShade, type:"normal", secLabel: getFormat("section", "Legacy Garage Doors/Legacy Shades (Up/Down/Stop)"), cap: "capability.doorControl", mul: true],
-         [id:'newGarageAdjust_', sOrder:29, desc:'Adjust: ', comm:adjustNewGarage, sub:"valGarageAction", type:"hasSub", subType:"enum", subOpt:['Open','Close'], secLabel: getFormat("section", "Garage Doors (Open/Close)"), cap: "capability.garageDoorControl", sTitle: "Action", sDesc:"Choose Action", mul: true],
-         [id:'newShadeAdjust_', sOrder:30, desc:'Adjust: ', comm:adjustNewShade, sub:"valShadeAction", sub2:"valSposition", sub3:"valSDirection", type:"hasSub", subType:"enum", sub2Type:"number", sub3Type:"enum", subOpt:['Open','Close', 'Set Position','Start Position Change','Stop Position Change'], sub3Opt:['Open','Close'], secLabel: getFormat("section", "Shades (Open/Close/Position/Start/Stop)"), cap: "capability.windowShade", sTitle: "Action", s2Title:"Position", s3Title:"Direction", sDesc:"", s2Desc:"(0 to 100) *applies to Set Position Only", s3Desc:"*applies to Start Position Change Only", s2Initial: ", Pos:", s3Initial: ", Dir:", mul: true, s2NotReq: true, s3NotReq: true],
+         [id:"locks_", sOrder:27, desc:'Set Lock: ', comm:setUnlock, sub:"valLock", subType:"enum", subOpt:['lock','unlock'], type:"hasSub", secLabel: getFormat("section", "Locks"), cap: "capability.lock", sTitle: "Select Action Type", sDesc:"Choose Action", mul: true],
+		 [id:'cycleScenes_', sOrder:28, desc:'Cycle', comm:cycle, type:"normal", secLabel: getFormat("section", "Scenes (Cycle)"), cap: "device.SceneActivator", mul: true, isCycle: true],
+         [id:"shadeAdjust_", sOrder:29, desc:'Adjust', comm:adjustShade, type:"normal", secLabel: getFormat("section", "Legacy Garage Doors/Legacy Shades (Up/Down/Stop)"), cap: "capability.doorControl", mul: true],
+         [id:'newGarageAdjust_', sOrder:30, desc:'Adjust: ', comm:adjustNewGarage, sub:"valGarageAction", type:"hasSub", subType:"enum", subOpt:['Open','Close'], secLabel: getFormat("section", "Garage Doors (Open/Close)"), cap: "capability.garageDoorControl", sTitle: "Action", sDesc:"Choose Action", mul: true],
+         [id:'newShadeAdjust_', sOrder:31, desc:'Adjust: ', comm:adjustNewShade, sub:"valShadeAction", sub2:"valSposition", sub3:"valSDirection", type:"hasSub", subType:"enum", sub2Type:"number", sub3Type:"enum", subOpt:['Open','Close', 'Set Position','Start Position Change','Stop Position Change'], sub3Opt:['Open','Close'], secLabel: getFormat("section", "Shades (Open/Close/Position/Start/Stop)"), cap: "capability.windowShade", sTitle: "Action", s2Title:"Position", s3Title:"Direction", sDesc:"", s2Desc:"(0 to 100) *applies to Set Position Only", s3Desc:"*applies to Start Position Change Only", s2Initial: ", Pos:", s3Initial: ", Dir:", mul: true, s2NotReq: true, s3NotReq: true],
          
-         [id:'sirens_', sOrder:31, desc:'Toggle', comm:toggle, type:"normal", secLabel: getFormat("section", "Sirens (Toggle)"), cap: "capability.alarm", mul: true],
-         [id:'httpRequest_', sOrder:32, desc:'Send: ', comm:hRequest, sub:"reqUrl", subType:"text", type:"hasSub", secLabel: getFormat("section", "Send Http Request"), cap: "enum", opt:['POST', 'GET'], sTitle:"HTTP URL", sDesc:"Enter complete url to send", mul: false],
-         [id:"speechDevice_", sOrder:33, desc:'Send Msg To', comm:speechHandle, type:"normal", secLabel: getFormat("section", "Notifications (Speech):"), sub:"speechTxt", cap: "capability.speechSynthesis", subType:"text", sTitle: "Message To Speak:", sDesc:"Enter message to speak (Random messages: Use ; to separate choices)", mul: true],///set type to normal instead of sub so message text is not displayed
+         [id:'sirens_', sOrder:32, desc:'Toggle', comm:toggle, type:"normal", secLabel: getFormat("section", "Sirens (Toggle)"), cap: "capability.alarm", mul: true],
+         [id:'httpRequest_', sOrder:33, desc:'Send: ', comm:hRequest, sub:"reqUrl", subType:"text", type:"hasSub", secLabel: getFormat("section", "Send Http Request"), cap: "enum", opt:['POST', 'GET'], sTitle:"HTTP URL", sDesc:"Enter complete url to send", mul: false],
+         [id:"speechDevice_", sOrder:34, desc:'Send Msg To', comm:speechHandle, type:"normal", secLabel: getFormat("section", "Notifications (Speech):"), sub:"speechTxt", cap: "capability.speechSynthesis", subType:"text", sTitle: "Message To Speak:", sDesc:"Enter message to speak (Random messages: Use ; to separate choices)", mul: true],///set type to normal instead of sub so message text is not displayed
 		 
 		 [id:"notifications_", desc:'Send Push Notification', comm:messageHandle, sub:"valNotify", type:"bool"],
      	 [id:"phone_", desc:'Send SMS', comm:smsHandle, sub:"notifications_", type:"normal"],
@@ -694,8 +723,21 @@ def ruleExec(rules, action){
 	if(action == "Evaluate") ruleAction =  "runRule"
 	if(action == "Set Boolean True") ruleAction =  "setRuleBooleanTrue"
 	if(action == "Set Boolean False") ruleAction =  "setRuleBooleanFalse"
-	
 	RMUtils.sendAction(rules, ruleAction, app.label)
+}
+
+def ruleExec5(rules, action){
+	if (!descTextDisable) log.info "Performing ${action} Action on Rules: ${rules}"
+	def ruleAction
+	if(action == "Run") ruleAction =  "runRuleAct"
+	if(action == "Stop") ruleAction =  "stopRuleAct"
+	if(action == "Pause") ruleAction =  "pauseRule"
+	if(action == "Resume") ruleAction =  "resumeRule"
+	if(action == "Evaluate") ruleAction =  "runRule"
+	if(action == "Set Boolean True") ruleAction =  "setRuleBooleanTrue"
+	if(action == "Set Boolean False") ruleAction =  "setRuleBooleanFalse"
+	log.info "RM5 test running"
+	RMUtils.sendAction(rules, ruleAction, app.label,'5.0')
 }
 
 def messageHandle(msg, inApp) {
