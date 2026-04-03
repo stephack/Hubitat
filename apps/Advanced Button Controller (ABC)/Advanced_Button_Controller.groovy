@@ -6,6 +6,7 @@
  *
  *	Author: Stephan Hackett
  * 
+ *  04/03/26 - added new 'menu: "Automations"' to the app metadata to properly display this app as an Automation in HE 2.5.x menu
  *	
  *	01/14/19 - added url to Raw code at the top of the parent/child apps
  *			 - adjusted logging
@@ -14,7 +15,7 @@
  *	07/03/18 - added pictures and Update check
  * 
  */
-def version(){"v0.2.190114"}
+def version(){"v0.2.260403"}
 
 definition(
     name: "Advanced Button Controller",
@@ -26,6 +27,7 @@ definition(
     iconUrl: "https://cdn.rawgit.com/stephack/ABC/master/resources/images/abc2.png",
     iconX2Url: "https://cdn.rawgit.com/stephack/ABC/master/resources/images/abc2.png",
     iconX3Url: "https://cdn.rawgit.com/stephack/ABC/master/resources/images/abc2.png",
+    menu: "Automations"
 )
 
 preferences {
