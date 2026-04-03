@@ -7,6 +7,8 @@
  *
  *	Author: SmartThings, modified by Bruce Ravenel, Dale Coffing, Stephan Hackett
  *
+ *  04/03/26 - added new 'menu: "Automations"' to the app metadata to properly display this app as an Automation in HE 2.5.x menu
+ *
  *  01/09/22 - added support for RMv5 rules. Older versions are considered "legacy". Requires Hub v2.2.9 f/w or higher.
  *           - Thanks to @bertabcd1234 for guidance with the undocumented RMUtils v5 api.
  *
@@ -113,7 +115,7 @@
 
 import hubitat.helper.RMUtils
 
-def version(){"v0.2.220109"}
+def version(){"v0.2.260403"}
 
 definition(
     name: "ABC Button Mapping",
@@ -125,6 +127,7 @@ definition(
     iconUrl: "https://cdn.rawgit.com/stephack/ABC/master/resources/images/abc2.png",
     iconX2Url: "https://cdn.rawgit.com/stephack/ABC/master/resources/images/abc2.png",
     iconX3Url: "https://cdn.rawgit.com/stephack/ABC/master/resources/images/abc2.png",
+    menu: "Automations"
 )
 
 preferences {
